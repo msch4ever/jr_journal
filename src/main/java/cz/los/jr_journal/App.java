@@ -2,6 +2,7 @@ package cz.los.jr_journal;
 
 import cz.los.jr_journal.bot.JrJournalBot;
 import cz.los.jr_journal.bot.config.BotConfig;
+import cz.los.jr_journal.bot.config.ConfigResolver;
 import lombok.extern.slf4j.Slf4j;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
