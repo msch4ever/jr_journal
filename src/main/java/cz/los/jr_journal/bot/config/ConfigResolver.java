@@ -1,6 +1,5 @@
 package cz.los.jr_journal.bot.config;
 
-import cz.los.jr_journal.bot.config.BotConfig;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.FileInputStream;
