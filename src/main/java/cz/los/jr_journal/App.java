@@ -3,6 +3,8 @@ package cz.los.jr_journal;
 import cz.los.jr_journal.bot.JrJournalBot;
 import cz.los.jr_journal.bot.config.BotConfig;
 import cz.los.jr_journal.bot.config.ConfigResolver;
+import cz.los.jr_journal.bot.handler.InteractionHandler;
+import cz.los.jr_journal.context.AppContext;
 import lombok.extern.slf4j.Slf4j;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
@@ -19,15 +21,16 @@ public class App {
     public void run(String[] cmd) throws TelegramApiException {
         log.info("Starting JR_JOURNAL bot...");
         logo();
+        AppContext context = AppContext.get();
         final BotConfig config = new ConfigResolver().resolveConfig(cmd);
-        final JrJournalBot bot = new JrJournalBot(config);
+        final JrJournalBot bot = new JrJournalBot(config, (InteractionHandler) context.getBean(InteractionHandler.class));
         TelegramBotsApi botsApi = new TelegramBotsApi(DefaultBotSession.class);
         botsApi.registerBot(bot);
         initCommands(config, bot);
         log.info("JR_JOURNAL bot started...");
     }
 
-    private static void initCommands(BotConfig config, JrJournalBot bot) throws TelegramApiException {
+    private void initCommands(BotConfig config, JrJournalBot bot) throws TelegramApiException {
         log.info("Initiating commands...");
         List<BotCommand> commands = config.provideCommands();
         log.info("{} commands present.", commands.size());
