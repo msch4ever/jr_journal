@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <changeSet id="journal_entry_1_create" author="klos">
+        <createTable tableName="journal_entry">
+            <column name="entry_id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="entry_user_id" type="BIGINT">
+                <constraints foreignKeyName="journal_entry_mentor_fk" nullable="false" references="bot_user(user_id)"/>
+            </column>
+            <column name="lector_user_id" type="BIGINT">
+                <constraints foreignKeyName="journal_entry_other_mentor_fk" nullable="true" references="bot_user(user_id)"/>
+            </column>
+            <column name="other_mentor_participation" type="VARCHAR(255)"/>
+            <column name="group_id" type="BIGINT">
+                <constraints foreignKeyName="journal_entry_group_fk" nullable="false" references="bot_group(group_id)"/>
+            </column>
+            <column name="topic" type="VARCHAR(255)"/>
+            <column name="date" type="DATE"/>
+            <column name="duration" type="TIME"/>
+            <column name="what_could_be_improved" type="VARCHAR(255)"/>
+            <column name="general_comment" type="VARCHAR(255)"/>
+            <column name="created_at" type="TIMESTAMP" defaultValueDate="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+</databaseChangeLog>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <changeSet id="group_mentor_1_create" author="klos">
+        <createTable tableName="group_mentor">
+            <column name="group_id" type="BIGINT">
+                <constraints foreignKeyName="group_mentor_group_fk" nullable="false" references="bot_group(group_id)"/>
+            </column>
+            <column name="mentor_id" type="BIGINT">
+                <constraints foreignKeyName="group_mentor_mentor_fk" nullable="false" references="bot_user(user_id)"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+</databaseChangeLog>

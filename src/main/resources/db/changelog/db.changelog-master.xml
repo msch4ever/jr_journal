@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <!-- Include changelogs for specific tables -->
+    <include file="src/main/resources/db/changelog/tables/bot_user_changelog.xml"/>
+    <include file="src/main/resources/db/changelog/tables/bot_group_changelog.xml"/>
+    <include file="src/main/resources/db/changelog/tables/journal_entry_changelog.xml"/>
+    <include file="src/main/resources/db/changelog/tables/group_mentor_changelog.xml"/>
+    <include file="src/main/resources/db/changelog/tables/group_schedule_changelog.xml"/>
+
+</databaseChangeLog>
