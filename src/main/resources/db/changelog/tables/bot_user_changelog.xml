@@ -24,4 +24,9 @@
         </createTable>
     </changeSet>
 
+    <changeSet id="bot_user_2_username_and_telegram_id_unique_constraints" author="klos">
+        <addUniqueConstraint tableName="bot_user" constraintName="unique_username" columnNames="username"/>
+        <addUniqueConstraint tableName="bot_user" constraintName="unique_telegram_user_id" columnNames="telegram_user_id"/>
+    </changeSet>
+
 </databaseChangeLog>
