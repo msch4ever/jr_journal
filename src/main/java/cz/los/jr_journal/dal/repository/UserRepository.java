@@ -13,22 +13,17 @@ import org.apache.ibatis.session.SqlSessionFactoryBuilder;
 import java.io.Reader;
 
 @Slf4j
-public class UserRepository implements Repository<BotUser> {
+public class UserRepository extends AbstractRepository implements Repository<BotUser> {
 
     private final Class<UserMapper> mapperClass;
-    private SqlSessionFactory sessionFactory;
-
-    @SneakyThrows
     public UserRepository() {
         this.mapperClass = UserMapper.class;
-        Reader reader = Resources.getResourceAsReader(MYBATIS_CONFIG);
-        this.sessionFactory = new SqlSessionFactoryBuilder().build(reader);
     }
 
     @Override
     public void create(BotUser user) {
         log.info("Attempting to save {} into DB...", user);
-        try (SqlSession session = sessionFactory.openSession()) {
+        try (SqlSession session = openSession()) {
             UserMapper mapper = session.getMapper(mapperClass);
             mapper.insertUser(user);
             session.commit();
@@ -56,7 +51,7 @@ public class UserRepository implements Repository<BotUser> {
     }
 
     public int countByUsernameAndTelegramId(String username, Long telegramUserId) {
-        try (SqlSession session = sessionFactory.openSession()) {
+        try (SqlSession session = openSession()) {
             UserMapper mapper = session.getMapper(mapperClass);
             return mapper.countByUsernameAndTelegramId(username, telegramUserId);
         } catch (Exception e) {

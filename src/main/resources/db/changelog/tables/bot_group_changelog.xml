@@ -21,4 +21,8 @@
         </createTable>
     </changeSet>
 
+    <changeSet id="bot_group_2_name_unique_constraint" author="klos">
+        <addUniqueConstraint tableName="bot_group" constraintName="unique_name" columnNames="name"/>
+    </changeSet>
+
 </databaseChangeLog>

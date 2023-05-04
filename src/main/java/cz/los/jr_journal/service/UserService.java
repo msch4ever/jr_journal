@@ -25,7 +25,7 @@ public class UserService {
         String firstName = from.getFirstName();
         String lastName = from.getLastName();
         if (userExists(username, telegramUserId)) {
-            log.warn("User with telegramUserId:{} and username:{}} already exists",telegramUserId, username);
+            log.warn("User with telegramUserId:{} and username:{} already exists", telegramUserId, username);
             return Optional.empty();
         }
         BotUser newUser = new BotUser(telegramUserId, username, firstName, lastName);
