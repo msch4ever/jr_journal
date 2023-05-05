@@ -3,6 +3,7 @@ package cz.los.jr_journal;
 import cz.los.jr_journal.bot.JrJournalBot;
 import cz.los.jr_journal.bot.config.BotConfig;
 import cz.los.jr_journal.bot.config.ConfigResolver;
+import cz.los.jr_journal.bot.conversation.ConversationGC;
 import cz.los.jr_journal.bot.handler.InteractionHandler;
 import cz.los.jr_journal.context.AppContext;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +28,7 @@ public class App {
         TelegramBotsApi botsApi = new TelegramBotsApi(DefaultBotSession.class);
         botsApi.registerBot(bot);
         initCommands(config, bot);
+        ((ConversationGC) context.getBean(ConversationGC.class)).startGC();
         log.info("JR_JOURNAL bot started...");
     }
 

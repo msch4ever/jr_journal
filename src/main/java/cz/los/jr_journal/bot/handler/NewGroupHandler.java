@@ -1,13 +1,17 @@
 package cz.los.jr_journal.bot.handler;
 
 import cz.los.jr_journal.bot.BotResponse;
+import cz.los.jr_journal.model.BotUser;
 import cz.los.jr_journal.model.Group;
+import cz.los.jr_journal.model.Level;
 import cz.los.jr_journal.service.GroupService;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
-import java.util.Optional;
+import java.util.*;
 
 import static cz.los.jr_journal.bot.command.Command.NEW_GROUP;
 
@@ -17,9 +21,11 @@ public class NewGroupHandler extends AbstractCommandHandler implements CommandHa
     private static final String GROUP_CREATED = "Группа *%s* успешно зарегистрирована";
     private static final String GROUP_ALREADY_EXISTS = "Группа *%s* уже существует.. Проверь, может это ошибка?";
     private final GroupService groupService;
+    private final Map<Long, NewGroupConversation> conversationMap;
 
     public NewGroupHandler(GroupService groupService) {
         this.groupService = groupService;
+        this.conversationMap = new HashMap<>();
     }
 
     @Override
@@ -47,6 +53,14 @@ public class NewGroupHandler extends AbstractCommandHandler implements CommandHa
                         .text(String.format(GROUP_ALREADY_EXISTS, input.groupName))
                         .parseMode("markdown")
                         .build()));
+    }
+
+    @Getter
+    @Setter
+    private static class NewGroupConversation {
+        private Long chatId;
+        private int step = 0;
+
     }
 
 

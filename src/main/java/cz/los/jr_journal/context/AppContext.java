@@ -1,6 +1,8 @@
 package cz.los.jr_journal.context;
 
 import cz.los.jr_journal.bot.command.Command;
+import cz.los.jr_journal.bot.conversation.ConversationGC;
+import cz.los.jr_journal.bot.conversation.ConversationKeeper;
 import cz.los.jr_journal.bot.handler.*;
 import cz.los.jr_journal.dal.repository.GroupRepository;
 import cz.los.jr_journal.dal.repository.UserRepository;
@@ -75,6 +77,14 @@ public final class AppContext {
                 handlers.put(NEW_GROUP, newGroupHandler);
                 handlers.put(NEW_LEVEL, newLevelHandler);
 
+                log.info("Initiating conversation Keeper...");
+                ConversationKeeper keeper = new ConversationKeeper();
+                ConversationGC gc = new ConversationGC(keeper);
+
+                registry.put(ConversationKeeper.class, keeper);
+                registry.put(ConversationGC.class, gc);
+
+                log.info("Initiating context...");
                 context = new AppContext(registry);
                 log.info("AppContext initialized!");
             }
