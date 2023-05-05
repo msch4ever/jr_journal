@@ -7,8 +7,11 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 public class MessageHandler {
 
     public BotResponse<SendMessage> handle(Update update) {
-        return null;
-
+        return new BotResponse<>(
+                SendMessage.builder()
+                        .chatId(update.getMessage().getChatId())
+                        .text("Я ничего не понял :(")
+                        .build());
     }
 
 }

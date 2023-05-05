@@ -36,7 +36,7 @@ public class JrJournalBot extends TelegramLongPollingBot {
     public void onUpdateReceived(Update update) {
         BotResponse<SendMessage> response = interactionHandler.handle(update);
         try {
-            executeAsync(response.getResponse());
+            execute(response.getResponse());
         } catch (TelegramApiException e) {
             throw new RuntimeException(e);
         }

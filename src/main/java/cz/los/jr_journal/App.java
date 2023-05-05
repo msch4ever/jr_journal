@@ -34,7 +34,9 @@ public class App {
         log.info("Initiating commands...");
         List<BotCommand> commands = config.provideCommands();
         log.info("{} commands present.", commands.size());
-        bot.execute(SetMyCommands.builder().commands(commands).build());
+        bot.execute(SetMyCommands.builder()
+                .commands(commands)
+                .build());
         log.info("Following commands available:{}{}",
                 System.lineSeparator(),
                 commands.stream()

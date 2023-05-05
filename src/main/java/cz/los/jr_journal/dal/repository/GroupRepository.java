@@ -6,10 +6,12 @@ import cz.los.jr_journal.model.Group;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.ibatis.session.SqlSession;
 
+import java.util.Optional;
+
 @Slf4j
 public class GroupRepository extends AbstractRepository implements Repository<Group> {
 
-    private Class<GroupMapper> mapperClass;
+    private final Class<GroupMapper> mapperClass;
 
     public GroupRepository() {
         this.mapperClass = GroupMapper.class;
@@ -35,9 +37,33 @@ public class GroupRepository extends AbstractRepository implements Repository<Gr
         return null;
     }
 
-    @Override
-    public void update(Group entity) {
+    public Optional<Group> findByName(String name) {
+        log.info("Attempting to find group by name {}...", name);
+        try (SqlSession session = openSession()) {
+            GroupMapper mapper = session.getMapper(mapperClass);
+            Optional<Group> group = mapper.findByName(name);
+            group.ifPresent(value -> log.info("Group was successfully saved in the DB with id: {}", value.getGroupId()));
+            return group;
+        } catch (Exception e) {
+            String message = String.format("Could not perform %s operation on %s!", "findByName", name);
+            log.error(message + System.lineSeparator() + e.getMessage());
+            throw new RuntimeException(message);
+        }
+    }
 
+    @Override
+    public void update(Group group) {
+        log.info("Attempting to update {} in the DB...", group);
+        try (SqlSession session = openSession()) {
+            GroupMapper mapper = session.getMapper(mapperClass);
+            mapper.updateGroup(group);
+            session.commit();
+            log.info("Group with id: {} was successfully updated in the DB!", group.getGroupId());
+        } catch (Exception e) {
+            String message = String.format("Could not perform %s operation on %s!", "update", group);
+            log.error(message + System.lineSeparator() + e.getMessage());
+            throw new RuntimeException(message);
+        }
     }
 
     @Override

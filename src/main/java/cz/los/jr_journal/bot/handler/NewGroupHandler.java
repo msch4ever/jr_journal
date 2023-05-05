@@ -34,7 +34,7 @@ public class NewGroupHandler extends AbstractCommandHandler implements CommandHa
                     .text(input.errorMessage)
                     .build());
         }
-        input.extractGroupName();
+        input.extractParams();
         Optional<Group> group = groupService.createGroup(input.groupName);
         return group.map(value -> new BotResponse<>(
                         SendMessage.builder()
@@ -50,43 +50,38 @@ public class NewGroupHandler extends AbstractCommandHandler implements CommandHa
     }
 
 
-    private static class NewGroupInput {
+    private static class NewGroupInput extends AbstractInput {
 
-        private static final String STICK_TO_THE_RULES = "Придерживайся корректоной формы команды.";
-        private static final String NO_GROUP_NAME_PROVIDED = "Ты не предоставил название группы. " + STICK_TO_THE_RULES;
-        private static final String TOO_MANY_ARGUMENTS = "Ты предоставил слишком много параметров." +
+        private static final String NO_GROUP_NAME_PROVIDED = "Название группыне не предоставлено . " + STICK_TO_THE_RULES;
+        private static final String TOO_MANY_ARGUMENTS = "Предоставленно слишком много параметров." +
                 "Убедись, что название группы состоит из одного слова или не содержит пробелов. " + STICK_TO_THE_RULES;
-        private boolean valid;
-        private String errorMessage;
-        private final String[] splitText;
         private String groupName;
 
         private NewGroupInput(String commandText) {
-            this.splitText = commandText.split("\\s");
+            super(commandText);
         }
 
-        private void validate() {
+        @Override
+        protected void validate() {
             if (splitText.length == 1) {
-                errorMessage = new StringBuilder()
-                        .append(NO_GROUP_NAME_PROVIDED)
-                        .append(System.lineSeparator())
-                        .append(NEW_GROUP.getDescription())
-                        .toString();
+                errorMessage = NO_GROUP_NAME_PROVIDED +
+                        System.lineSeparator() +
+                        NEW_GROUP.getDescription();
                 valid = false;
                 return;
             }
             if (splitText.length > 2) {
-                errorMessage = new StringBuilder()
-                        .append(TOO_MANY_ARGUMENTS)
-                        .append(System.lineSeparator())
-                        .append(NEW_GROUP.getDescription())
-                        .toString();
+                errorMessage = TOO_MANY_ARGUMENTS +
+                        System.lineSeparator() +
+                        NEW_GROUP.getDescription();
                 valid = false;
                 return;
             }
             valid = true;
         }
-        private void extractGroupName() {
+
+        @Override
+        protected void extractThisParams() {
             this.groupName = splitText[1];
         }
     }

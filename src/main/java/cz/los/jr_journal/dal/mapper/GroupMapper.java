@@ -3,10 +3,15 @@ package cz.los.jr_journal.dal.mapper;
 import cz.los.jr_journal.model.Group;
 import org.apache.ibatis.annotations.*;
 
+import java.util.Optional;
+
 public interface GroupMapper {
 
     @Select("SELECT * FROM bot_group WHERE group_id = #{groupId}")
     Group getGroupById(Long groupId);
+
+    @Select("SELECT group_id, name, module FROM bot_group WHERE name = #{name}")
+    Optional<Group> findByName(@Param("name") String name);
 
     @Select("SELECT COUNT(*) FROM bot_group WHERE name = #{name}")
     int countByName(@Param("name") String name);

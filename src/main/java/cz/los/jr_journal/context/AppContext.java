@@ -58,6 +58,7 @@ public final class AppContext {
                 StartHandler startHandler = new StartHandler();
                 RegisterHandler registerHandler = new RegisterHandler(userService);
                 NewGroupHandler newGroupHandler = new NewGroupHandler(groupService);
+                NewLevelHandler newLevelHandler = new NewLevelHandler(groupService);
                 RootCommandHandler rootCommandHandler = new RootCommandHandler(handlers, errorHandler);
                 MessageHandler messageHandler = new MessageHandler();
                 InteractionHandler interactionHandler = new InteractionHandler(rootCommandHandler, messageHandler);
@@ -67,10 +68,12 @@ public final class AppContext {
                 registry.put(StartHandler.class, startHandler);
                 registry.put(RegisterHandler.class, registerHandler);
                 registry.put(NewGroupHandler.class, newGroupHandler);
+                registry.put(NewLevelHandler.class, newLevelHandler);
 
                 handlers.put(START, startHandler);
                 handlers.put(REGISTER, registerHandler);
                 handlers.put(NEW_GROUP, newGroupHandler);
+                handlers.put(NEW_LEVEL, newLevelHandler);
 
                 context = new AppContext(registry);
                 log.info("AppContext initialized!");
