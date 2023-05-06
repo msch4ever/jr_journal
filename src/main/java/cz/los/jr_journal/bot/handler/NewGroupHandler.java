@@ -164,7 +164,7 @@ public class NewGroupHandler extends AbstractCommandHandler implements CommandHa
             return group.map(value -> new BotResponse<>(
                             SendMessage.builder()
                                     .chatId(message.getChatId())
-                                    .text(String.format(GROUP_CREATED, value.getName()))
+                                    .text(String.format(GROUP_CREATED, value.getDisplayName()))
                                     .parseMode("markdown")
                                     .build())
                     )

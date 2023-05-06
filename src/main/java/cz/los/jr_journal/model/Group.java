@@ -14,27 +14,26 @@ public class Group {
     @EqualsAndHashCode.Include
     private Long groupId;
     @EqualsAndHashCode.Include
-    private String name; //ToDo: create display name and lowercase name as an unique identifier
+    private String name;
+    private String displayName;
     @Setter
     private Level module;
     private List<Long> mentorIds;
     private List<DayOfWeek> schedule;
 
     public Group(String name) {
-        this.name = name;
+        name = name.trim();
+        this.name = name.toLowerCase();
+        this.displayName = name;
     }
 
     public Group(String name, Level module) {
-        this.name = name;
+        this(name);
         this.module = module;
     }
 
     public Group(Long groupId, String name, Level module) {
+        this(name, module);
         this.groupId = groupId;
-        this.name = name;
-        this.module = module;
     }
-
-    //ToDo: add operational flag to indicate if Group is ready for work. That is: has schedule, has mentors, has module
-
 }

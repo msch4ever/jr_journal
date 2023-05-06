@@ -10,8 +10,11 @@
             <column name="group_id" type="BIGINT" autoIncrement="true">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
-            <column name="name" type="VARCHAR(255)"/>
-            <column name="module" type="VARCHAR(255)"/>
+            <column name="name" type="VARCHAR(20)"/>
+            <column name="display_name" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="module" type="VARCHAR(20)"/>
             <column name="created_at" type="TIMESTAMP" defaultValueDate="CURRENT_TIMESTAMP">
                 <constraints nullable="false"/>
             </column>
@@ -19,9 +22,6 @@
                 <constraints nullable="false"/>
             </column>
         </createTable>
-    </changeSet>
-
-    <changeSet id="bot_group_2_name_unique_constraint" author="klos">
         <addUniqueConstraint tableName="bot_group" constraintName="unique_name" columnNames="name"/>
     </changeSet>
 

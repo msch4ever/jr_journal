@@ -26,11 +26,10 @@ public abstract class Conversation {
 
     public void incrementStep() {
         if (step <= stepQty) {
+            lastInteracted = System.currentTimeMillis();
             step++;
         } else {
             throw new IllegalStateException("Could not increment step over available qty!");
         }
     }
-
-    //ToDo: lastInteracted update
 }

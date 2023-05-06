@@ -25,7 +25,7 @@ public class NewGroupConversation extends Conversation {
     }
 
     public void setGroupName(String groupName) {
-        this.groupName = groupName;
+        this.groupName = groupName.trim();
     }
 
     public void setModule(Level module) {

@@ -7,31 +7,30 @@ import java.util.Optional;
 
 public interface GroupMapper {
 
-    @Select("SELECT * FROM bot_group WHERE group_id = #{groupId}")
+    @Select("SELECT group_id, name, display_name, module FROM bot_group WHERE group_id = #{groupId}")
     Group getGroupById(Long groupId);
 
-    @Select("SELECT group_id, name, module FROM bot_group WHERE name = #{name}")
+    @Select("SELECT group_id, name, display_name, module FROM bot_group WHERE name = #{name}")
     Optional<Group> findByName(@Param("name") String name);
 
     @Select("SELECT COUNT(*) FROM bot_group WHERE name = #{name}")
     int countByName(@Param("name") String name);
 
     @Insert("""
-            INSERT INTO bot_group (name, module)
-            VALUES (#{name}, #{module})
+            INSERT INTO bot_group (name, display_name, module)
+            VALUES (#{name}, #{displayName}, #{module})
             """)
     @Options(useGeneratedKeys = true, keyProperty = "groupId")
     void insertGroup(Group group);
 
     @Update("""
                UPDATE bot_group
-               SET name = #{name},
-                   module = #{module}
+               SET module = #{module}
                WHERE group_id = #{groupId}
                """)
     void updateGroup(Group group);
 
-    @Delete("DELETE FROM bot_group WHERE group_id = #{groupId}")
-    void deleteGroup(Long groupId);
+    @Delete("DELETE FROM bot_group WHERE name = #{name}")
+    void deleteGroup(@Param("name") String name);
     
 }
