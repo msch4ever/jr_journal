@@ -1,5 +1,7 @@
 package cz.los.jr_journal.bot.command;
 
+import java.util.List;
+
 public enum Command {
 
     START("start", "Start bot"),
@@ -23,5 +25,9 @@ public enum Command {
 
     public String getDescription() {
         return description;
+    }
+
+    public static List<Command> getInteractiveCommands() {
+        return List.of(NEW_GROUP, REPORT);
     }
 }

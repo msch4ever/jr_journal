@@ -54,15 +54,22 @@ public final class AppContext {
                 registry.put(UserService.class, userService);
                 registry.put(GroupService.class, groupService);
 
+                log.info("Initiating conversation Keeper...");
+                ConversationKeeper keeper = new ConversationKeeper();
+                ConversationGC gc = new ConversationGC(keeper);
+
+                registry.put(ConversationKeeper.class, keeper);
+                registry.put(ConversationGC.class, gc);
+
                 log.info("Initializing command handlers...");
                 Map<Command, CommandHandler> handlers = new HashMap<>();
                 ErrorHandler errorHandler = new ErrorHandler();
                 StartHandler startHandler = new StartHandler();
                 RegisterHandler registerHandler = new RegisterHandler(userService);
-                NewGroupHandler newGroupHandler = new NewGroupHandler(groupService);
+                NewGroupHandler newGroupHandler = new NewGroupHandler(groupService, keeper);
                 NewLevelHandler newLevelHandler = new NewLevelHandler(groupService);
                 RootCommandHandler rootCommandHandler = new RootCommandHandler(handlers, errorHandler);
-                MessageHandler messageHandler = new MessageHandler();
+                MessageHandler messageHandler = new MessageHandler(handlers, keeper);
                 InteractionHandler interactionHandler = new InteractionHandler(rootCommandHandler, messageHandler);
 
                 registry.put(InteractionHandler.class, interactionHandler);
@@ -76,13 +83,6 @@ public final class AppContext {
                 handlers.put(REGISTER, registerHandler);
                 handlers.put(NEW_GROUP, newGroupHandler);
                 handlers.put(NEW_LEVEL, newLevelHandler);
-
-                log.info("Initiating conversation Keeper...");
-                ConversationKeeper keeper = new ConversationKeeper();
-                ConversationGC gc = new ConversationGC(keeper);
-
-                registry.put(ConversationKeeper.class, keeper);
-                registry.put(ConversationGC.class, gc);
 
                 log.info("Initiating context...");
                 context = new AppContext(registry);

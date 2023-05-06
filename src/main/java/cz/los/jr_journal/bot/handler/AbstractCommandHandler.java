@@ -2,6 +2,7 @@ package cz.los.jr_journal.bot.handler;
 
 import cz.los.jr_journal.bot.command.Command;
 import lombok.extern.slf4j.Slf4j;
+import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
 import java.util.Arrays;
@@ -17,7 +18,11 @@ public abstract class AbstractCommandHandler {
             + STICK_TO_THE_RULES;
 
     protected Optional<Command> extractCommand(Update update) {
-        String text = update.getMessage().getText().trim().toLowerCase();
+        return extractCommand(update.getMessage());
+    }
+
+    protected Optional<Command> extractCommand(Message message) {
+        String text = message.getText().trim().toLowerCase();
         List<Command> present = Arrays.stream(Command.values())
                 .filter(it -> text.contains(it.getCommand()))
                 .toList();

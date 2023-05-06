@@ -37,21 +37,21 @@ public class ConversationGC {
         @Override
         public void run() {
             log.info("Starting conversations GC...");
-            Map<ConversationKey, Conversation> conversationMap = conversationKeeper.getConversations();
+            Map<Long, Conversation> conversationMap = conversationKeeper.getConversations();
             if (conversationMap.isEmpty()) {
                 log.info("Conversation map is empty. Nothing to do here...");
                 return;
             }
-            List<ConversationKey> toBeRemoved = new ArrayList<>();
+            List<Long> toBeRemoved = new ArrayList<>();
             conversationMap.forEach((key, value) -> {
                 long now = System.currentTimeMillis();
                 long timeout = value.getTimeout();
                 long lastInteracted = value.getLastInteracted();
-                if (now - lastInteracted > timeout) {
+                if (now - lastInteracted > timeout * 1000) {
                     toBeRemoved.add(key);
                 }
             });
-            for (ConversationKey key : toBeRemoved) {
+            for (Long key : toBeRemoved) {
                 conversationMap.remove(key);
             }
             log.info("GC finished. Removed {} conversations!", toBeRemoved.size());

@@ -24,6 +24,11 @@ public class Group {
         this.name = name;
     }
 
+    public Group(String name, Level module) {
+        this.name = name;
+        this.module = module;
+    }
+
     public Group(Long groupId, String name, Level module) {
         this.groupId = groupId;
         this.name = name;

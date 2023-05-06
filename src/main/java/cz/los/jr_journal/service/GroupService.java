@@ -1,5 +1,6 @@
 package cz.los.jr_journal.service;
 
+import cz.los.jr_journal.bot.conversation.NewGroupConversation;
 import cz.los.jr_journal.dal.repository.GroupRepository;
 import cz.los.jr_journal.model.Group;
 import cz.los.jr_journal.model.Level;
@@ -23,6 +24,18 @@ public class GroupService {
             return Optional.empty();
         }
         Group newGroup = new Group(groupName);
+        repository.create(newGroup);
+        log.info("Group with id:{} was created successfully", newGroup.getGroupId());
+        return Optional.of(newGroup);
+    }
+
+    public Optional<Group> createGroup(NewGroupConversation conversation) {
+        log.info("Creating a group...");
+        if (groupExists(conversation.getGroupName())) {
+            log.warn("Group with name:{} already exists", conversation.getGroupName());
+            return Optional.empty();
+        }
+        Group newGroup = new Group(conversation.getGroupName(), conversation.getModule());
         repository.create(newGroup);
         log.info("Group with id:{} was created successfully", newGroup.getGroupId());
         return Optional.of(newGroup);

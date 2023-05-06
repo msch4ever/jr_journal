@@ -23,4 +23,12 @@ public abstract class Conversation {
         this.stepQty = stepQty;
         this.step = 0;
     }
+
+    public void incrementStep() {
+        if (step <= stepQty) {
+            step++;
+        } else {
+            throw new IllegalStateException("Could not increment step over available qty!");
+        }
+    }
 }
