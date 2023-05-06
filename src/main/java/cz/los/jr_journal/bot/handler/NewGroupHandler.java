@@ -41,7 +41,7 @@ public class NewGroupHandler extends AbstractCommandHandler implements CommandHa
             "-" - отменить
             """;
     private static final String CONFIRM_CREATION = """
-            Подтверди создание группы *%s на уровне %s с менторами %s и %s*!
+            Подтверди создание группы *%s на уровне %s*!
             "+" - подтвердить
             "-" - отменить
             """;
@@ -147,7 +147,6 @@ public class NewGroupHandler extends AbstractCommandHandler implements CommandHa
         return new BotResponse<>(SendMessage.builder()
                 .chatId(message.getChatId())
                 .text(ASSIGN_SELF)
-                //.text(String.format(CONFIRM_CREATION, conversation.getGroupName(), conversation.getModule(), "Костя", "Сережа"))
                 .parseMode(MARKDOWN)
                 .build());
     }
@@ -179,7 +178,8 @@ public class NewGroupHandler extends AbstractCommandHandler implements CommandHa
         conversation.incrementStep();
         return new BotResponse<>(SendMessage.builder()
                 .chatId(message.getChatId())
-                .text(CONFIRM_CREATION)
+                .text(String.format(CONFIRM_CREATION, conversation.getGroupName(), conversation.getModule()))
+                .parseMode(MARKDOWN)
                 .build());
     }
 

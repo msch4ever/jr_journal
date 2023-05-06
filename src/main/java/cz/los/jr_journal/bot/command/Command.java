@@ -4,12 +4,12 @@ import java.util.List;
 
 public enum Command {
 
-    START("start", "Start bot"),
-    REGISTER("reg", "Registers as permanent user."),
-    NEW_GROUP("newgroup", "Create new Group. Usage: /newgroup <group_name>\""),
-    NEW_LEVEL("newlevel", "Set new level for Group. Usage: /newlevel <group_name> <level [1, 6]\""),
-    ASSIGN_MENTOR("assign", "Assign mentor to Group. Usage: /assign <group_name>"),
-    REPORT("report", "Submit report about lecture.");
+    START("start", "Начать общение с ботом"),
+    REGISTER("reg", "Зарегистрироваться в системе."),
+    NEW_GROUP("newgroup", "Создать новую группу. Следуйте инструкциям."),
+    NEW_LEVEL("newlevel", "Задать новый уровень группе. Следуйте инструкциям."),
+    ASSIGN_MENTOR("assign", "Привязать метнтора к группе. Следуйте инструкциям."),
+    REPORT("report", "Предоставить информацию по уроку. Следуйте инструкциям.");
 
     private String command;
     private String description;
