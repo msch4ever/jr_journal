@@ -26,12 +26,9 @@ public class ConversationGC {
 
     private static class GcTask extends Thread {
 
-        private static final String GC_THREAD = "GC-thread";
-
         private final ConversationKeeper conversationKeeper;
         public GcTask(ConversationKeeper conversationKeeper) {
             this.conversationKeeper = conversationKeeper;
-            setName(GC_THREAD);
         }
 
         @Override

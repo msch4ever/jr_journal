@@ -11,6 +11,7 @@ import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.ibatis.session.SqlSessionFactoryBuilder;
 
 import java.io.Reader;
+import java.util.Optional;
 
 @Slf4j
 public class UserRepository extends AbstractRepository implements Repository<BotUser> {
@@ -56,6 +57,18 @@ public class UserRepository extends AbstractRepository implements Repository<Bot
             return mapper.countByUsernameAndTelegramId(username, telegramUserId);
         } catch (Exception e) {
             String message = "Could not perform countByUsernameAndTelegramId!";
+            log.error(message + System.lineSeparator() + e.getMessage());
+            throw new RuntimeException(message);
+        }
+    }
+
+    public Optional<BotUser> findByTelegramId(long telegramUserId) {
+        try (SqlSession session = openSession()) {
+            UserMapper mapper = session.getMapper(mapperClass);
+            BotUser user = mapper.findByTelegramId(telegramUserId);
+            return user != null ? Optional.of(user) :Optional.empty();
+        } catch (Exception e) {
+            String message = "Could not perform findByTelegramId!";
             log.error(message + System.lineSeparator() + e.getMessage());
             throw new RuntimeException(message);
         }

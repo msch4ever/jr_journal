@@ -3,6 +3,7 @@ package cz.los.jr_journal.service;
 import cz.los.jr_journal.dal.repository.UserRepository;
 import cz.los.jr_journal.model.BotUser;
 import lombok.extern.slf4j.Slf4j;
+import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.User;
 
@@ -17,9 +18,9 @@ public class UserService {
         this.repository = repository;
     }
 
-    public Optional<BotUser> createUser(Update update) {
+    public Optional<BotUser> createUser(Message message) {
         log.info("Creating a user...");
-        User from = update.getMessage().getFrom();
+        User from = message.getFrom();
         Long telegramUserId = from.getId();
         String username = from.getUserName();
         String firstName = from.getFirstName();
@@ -39,8 +40,9 @@ public class UserService {
         return existingCount != 0;
     }
 
-    public BotUser findUser() {
-        return null;
+    public Optional<BotUser> findUserByTelegramId(long id) {
+        log.info("Fetching user by telegramId:{}...", id);
+        return repository.findByTelegramId(id);
     }
 
 }

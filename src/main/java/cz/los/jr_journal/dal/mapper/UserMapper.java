@@ -7,6 +7,9 @@ public interface UserMapper {
     @Select("SELECT * FROM bot_user WHERE user_id = #{userId}")
     BotUser getUserById(Long userId);
 
+    @Select("SELECT user_id, telegram_user_id, username, first_name, last_name, type FROM bot_user WHERE telegram_user_id = #{telegramId}")
+    BotUser findByTelegramId(long telegramId);
+
     @Select("SELECT COUNT(*) FROM bot_user WHERE username = #{username} AND telegram_user_id = #{telegramUserId}")
     int countByUsernameAndTelegramId(@Param("username") String username, @Param("telegramUserId") long telegramUserId);
 

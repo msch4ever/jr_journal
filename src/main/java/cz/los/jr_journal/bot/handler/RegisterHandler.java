@@ -24,7 +24,7 @@ public class RegisterHandler extends AbstractCommandHandler implements CommandHa
     @Override
     public BotResponse<SendMessage> handle(Update update) {
         log.info("Handling user creation command. {}", update);
-        Optional<BotUser> user = userService.createUser(update);
+        Optional<BotUser> user = userService.createUser(update.getMessage());
         return user.map(botUser -> new BotResponse<>(
                 SendMessage.builder()
                         .chatId(update.getMessage().getChatId())

@@ -2,6 +2,7 @@ package cz.los.jr_journal.service;
 
 import cz.los.jr_journal.bot.conversation.NewGroupConversation;
 import cz.los.jr_journal.dal.repository.GroupRepository;
+import cz.los.jr_journal.model.BotUser;
 import cz.los.jr_journal.model.Group;
 import cz.los.jr_journal.model.Level;
 import lombok.extern.slf4j.Slf4j;
@@ -37,6 +38,10 @@ public class GroupService {
         }
         Group newGroup = new Group(conversation.getGroupName(), conversation.getModule());
         repository.create(newGroup);
+        BotUser mentor = conversation.getMentor();
+        if (mentor != null) {
+            repository.createGroupMentorAssociation(newGroup.getGroupId(), mentor.getUserId());
+        }
         log.info("Group with id:{} was created successfully", newGroup.getGroupId());
         return Optional.of(newGroup);
     }

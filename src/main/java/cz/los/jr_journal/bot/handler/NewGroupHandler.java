@@ -5,19 +5,21 @@ import cz.los.jr_journal.bot.command.Command;
 import cz.los.jr_journal.bot.conversation.ConversationKeeper;
 import cz.los.jr_journal.bot.conversation.ConversationKey;
 import cz.los.jr_journal.bot.conversation.NewGroupConversation;
+import cz.los.jr_journal.model.BotUser;
 import cz.los.jr_journal.model.Group;
 import cz.los.jr_journal.model.Level;
 import cz.los.jr_journal.service.GroupService;
+import cz.los.jr_journal.service.UserService;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.User;
 
 import java.util.*;
 
-import static cz.los.jr_journal.bot.command.Command.NEW_GROUP;
-import static cz.los.jr_journal.bot.command.Command.NEW_LEVEL;
+import static cz.los.jr_journal.bot.command.Command.*;
 
 @Slf4j
 public class NewGroupHandler extends AbstractCommandHandler implements CommandHandler<SendMessage> {
@@ -33,7 +35,11 @@ public class NewGroupHandler extends AbstractCommandHandler implements CommandHa
                 5 - Spring
                 6 - Итоговый проект
             """;
-    private static final String ASSIGN_MENTOR = "Введи имя ментора или \"дальше\" чтобы пропустить этот шаг(к группе может быть приставлено не более 2х менторов)";
+    private static final String ASSIGN_SELF = """
+            Хочешь привязать себя к этой группе?
+            "+" - подтвердить
+            "-" - отменить
+            """;
     private static final String CONFIRM_CREATION = """
             Подтверди создание группы *%s на уровне %s с менторами %s и %s*!
             "+" - подтвердить
@@ -44,10 +50,12 @@ public class NewGroupHandler extends AbstractCommandHandler implements CommandHa
     private static final String GROUP_ALREADY_EXISTS = "Группа *%s* уже существует.. Проверь, может это ошибка?";
     private static final String WRONG_CONVERSATION_STATE = "Произошла ошибка в комманде регистрации группы. Начнем заново?";
     private final GroupService groupService;
+    private final UserService userService;
     private final ConversationKeeper keeper;
 
-    public NewGroupHandler(GroupService groupService, ConversationKeeper keeper) {
+    public NewGroupHandler(GroupService groupService, UserService userService, ConversationKeeper keeper) {
         this.groupService = groupService;
+        this.userService = userService;
         this.keeper = keeper;
     }
 
@@ -64,9 +72,8 @@ public class NewGroupHandler extends AbstractCommandHandler implements CommandHa
             switch (conversation.getStep()) {
                 case 1: return readName(message, conversation);
                 case 2: return readLevel(message, conversation);
-                /*case 3:
-                    return readMentor(message, conversation);*/
-                case 3: return confirmCreation(message, conversation);
+                case 3: return readAssignSelf(message, conversation);
+                case 4: return confirmCreation(message, conversation);
             }
         }
         log.warn("Something went wrong with command. {}", NEW_GROUP);
@@ -139,9 +146,40 @@ public class NewGroupHandler extends AbstractCommandHandler implements CommandHa
         log.info("Group level successfully obtained. Name:{} Level:{}", conversation.getGroupName(), conversation.getModule());
         return new BotResponse<>(SendMessage.builder()
                 .chatId(message.getChatId())
-                //.text(ASSIGN_MENTOR)
-                .text(String.format(CONFIRM_CREATION, conversation.getGroupName(), conversation.getModule(), "Костя", "Сережа"))
+                .text(ASSIGN_SELF)
+                //.text(String.format(CONFIRM_CREATION, conversation.getGroupName(), conversation.getModule(), "Костя", "Сережа"))
                 .parseMode(MARKDOWN)
+                .build());
+    }
+
+    private BotResponse<SendMessage> readAssignSelf(Message message, NewGroupConversation conversation) {
+        log.info("Reading decision to assign creator to the goup for conversation chatId:{} command:{}",
+                conversation.getChatId(), conversation.getCommand());
+        String commandText = message.getText();
+        ConfirmInput input = new ConfirmInput(commandText);
+        input.validate();
+        if (!input.valid) {
+            log.warn("Could not read confirmation. Sending error message!");
+            return new BotResponse<>(SendMessage.builder()
+                    .chatId(message.getChatId())
+                    .text(input.errorMessage)
+                    .build());
+        }
+        input.extractParams();
+        if (input.decision) {
+            Optional<BotUser> userOptional = userService.findUserByTelegramId(message.getFrom().getId());
+            BotUser user = userOptional.orElseGet(() -> {
+                log.info("User was not registered yet. Registering new user...");
+                return userService.createUser(message).get();
+            });
+            conversation.setMentor(user);
+        } else {
+            log.info("Moving on without assigning user to group...");
+        }
+        conversation.incrementStep();
+        return new BotResponse<>(SendMessage.builder()
+                .chatId(message.getChatId())
+                .text(CONFIRM_CREATION)
                 .build());
     }
 

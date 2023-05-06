@@ -66,7 +66,7 @@ public final class AppContext {
                 ErrorHandler errorHandler = new ErrorHandler();
                 StartHandler startHandler = new StartHandler();
                 RegisterHandler registerHandler = new RegisterHandler(userService);
-                NewGroupHandler newGroupHandler = new NewGroupHandler(groupService, keeper);
+                NewGroupHandler newGroupHandler = new NewGroupHandler(groupService, userService, keeper);
                 NewLevelHandler newLevelHandler = new NewLevelHandler(groupService);
                 RootCommandHandler rootCommandHandler = new RootCommandHandler(handlers, errorHandler);
                 MessageHandler messageHandler = new MessageHandler(handlers, keeper);

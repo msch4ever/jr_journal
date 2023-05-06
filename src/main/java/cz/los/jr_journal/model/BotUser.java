@@ -27,4 +27,13 @@ public class BotUser {
         this.firstName = firstName;
         this.lastName = lastName;
     }
+
+    public BotUser(Long userId, Long telegramUserId, String username, String firstName, String lastName, UserType type) {
+        this.userId = userId;
+        this.telegramUserId = telegramUserId;
+        this.username = username;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.type = type;
+    }
 }
