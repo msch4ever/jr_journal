@@ -31,4 +31,6 @@ public abstract class Conversation {
             throw new IllegalStateException("Could not increment step over available qty!");
         }
     }
+
+    //ToDo: lastInteracted update
 }
