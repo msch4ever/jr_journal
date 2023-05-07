@@ -4,7 +4,6 @@ import cz.los.jr_journal.bot.BotResponse;
 import cz.los.jr_journal.bot.conversation.AssignMentorConversation;
 import cz.los.jr_journal.bot.conversation.Conversation;
 import cz.los.jr_journal.bot.conversation.ConversationKeeper;
-import cz.los.jr_journal.bot.conversation.NewGroupConversation;
 import cz.los.jr_journal.model.BotUser;
 import cz.los.jr_journal.model.Group;
 import cz.los.jr_journal.service.GroupService;

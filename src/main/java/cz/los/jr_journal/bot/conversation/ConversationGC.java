@@ -1,6 +1,10 @@
 package cz.los.jr_journal.bot.conversation;
 
+import cz.los.jr_journal.bot.JrJournalBot;
+import cz.los.jr_journal.context.AppContext;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,6 +36,7 @@ public class ConversationGC {
         }
 
         @Override
+        @SneakyThrows
         public void run() {
             log.info("Starting conversations GC...");
             Map<Long, Conversation> conversationMap = conversationKeeper.getConversations();
@@ -50,6 +55,10 @@ public class ConversationGC {
             });
             for (Long key : toBeRemoved) {
                 conversationMap.remove(key);
+                ((JrJournalBot) AppContext.get().getBean(JrJournalBot.class)).execute(SendMessage.builder()
+                        .chatId(key)
+                        .text("Слишком долго возишься с командой. Отменяю. Приходи когда будет больше времени:)")
+                        .build());
             }
             log.info("GC finished. Removed {} conversations!", toBeRemoved.size());
         }

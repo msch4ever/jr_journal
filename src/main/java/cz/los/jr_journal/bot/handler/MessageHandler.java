@@ -19,9 +19,18 @@ public class MessageHandler {
     }
 
     public BotResponse<SendMessage> handle(Update update) {
-        Long chatId = update.getMessage().getChatId();
-        if (keeper.conversationExists(chatId)) {
-            return handlersRegistry.get(keeper.get(chatId).getCommand()).handle(update);
+        Long chatId = null;
+        if (update.hasMessage()) {
+            chatId = update.getMessage().getChatId();
+            if (keeper.conversationExists(chatId)) {
+                return handlersRegistry.get(keeper.get(chatId).getCommand()).handle(update);
+            }
+        }
+        if (update.hasCallbackQuery()) {
+            chatId = update.getCallbackQuery().getMessage().getChatId();
+            if (keeper.conversationExists(chatId)) {
+                return handlersRegistry.get(keeper.get(chatId).getCommand()).handle(update);
+            }
         }
         return new BotResponse<>(
                 SendMessage.builder()

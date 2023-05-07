@@ -26,7 +26,7 @@ public class InteractionHandler {
     public BotResponse<SendMessage> handle(Update update) {
         validateNotNull(update, Update.class.toString());
         Message message = update.getMessage();
-        if (message.isCommand()) {
+        if (message != null && message.isCommand()) {
             return rootCommandHandler.handle(update);
         } else {
             return messageHandler.handle(update);

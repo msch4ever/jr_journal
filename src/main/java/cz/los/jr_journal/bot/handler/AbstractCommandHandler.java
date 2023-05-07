@@ -19,7 +19,7 @@ import static cz.los.jr_journal.bot.command.Command.NEW_LEVEL;
 public abstract class AbstractCommandHandler {
 
     protected static final String MARKDOWN = "markdown";
-    private static final String WRONG_CONVERSATION_STATE = "Произошла ошибка в комманде регистрации группы. Начнем заново?";
+    protected static final String WRONG_CONVERSATION_STATE = "Произошла ошибка в комманде регистрации группы. Начнем заново?";
     protected static final String OPERATION_ABORTED = "Операция отменена!";
 
     protected static final String STICK_TO_THE_RULES = "Придерживайся корректоной формы команды.";

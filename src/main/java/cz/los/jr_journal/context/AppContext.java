@@ -8,9 +8,9 @@ import cz.los.jr_journal.dal.repository.GroupRepository;
 import cz.los.jr_journal.dal.repository.UserRepository;
 import cz.los.jr_journal.service.GroupService;
 import cz.los.jr_journal.service.UserService;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -19,10 +19,11 @@ import static cz.los.jr_journal.bot.command.Command.*;
 @Slf4j
 public final class AppContext {
 
+    @Getter
     private final Map<Class, Object> registry;
 
     private AppContext(Map<Class, Object> registry) {
-        this.registry = Collections.unmodifiableMap(registry);
+        this.registry = registry;
     }
 
     public static AppContext get() {
@@ -69,6 +70,7 @@ public final class AppContext {
                 NewGroupHandler newGroupHandler = new NewGroupHandler(groupService, userService, keeper);
                 NewLevelHandler newLevelHandler = new NewLevelHandler(groupService);
                 AssignMentorHandler assignMentorHandler = new AssignMentorHandler(groupService, userService, keeper);
+                ReportHandler reportHandler = new ReportHandler(keeper);
                 RootCommandHandler rootCommandHandler = new RootCommandHandler(handlers, errorHandler);
                 MessageHandler messageHandler = new MessageHandler(handlers, keeper);
                 InteractionHandler interactionHandler = new InteractionHandler(rootCommandHandler, messageHandler);
@@ -80,12 +82,14 @@ public final class AppContext {
                 registry.put(NewGroupHandler.class, newGroupHandler);
                 registry.put(NewLevelHandler.class, newLevelHandler);
                 registry.put(AssignMentorHandler.class, assignMentorHandler);
+                registry.put(ReportHandler.class, reportHandler);
 
                 handlers.put(START, startHandler);
                 handlers.put(REGISTER, registerHandler);
                 handlers.put(NEW_GROUP, newGroupHandler);
                 handlers.put(NEW_LEVEL, newLevelHandler);
                 handlers.put(ASSIGN_MENTOR, assignMentorHandler);
+                handlers.put(REPORT, reportHandler);
 
                 log.info("Initiating context...");
                 context = new AppContext(registry);

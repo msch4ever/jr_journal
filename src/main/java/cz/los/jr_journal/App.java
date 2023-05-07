@@ -27,6 +27,7 @@ public class App {
         final JrJournalBot bot = new JrJournalBot(config, (InteractionHandler) context.getBean(InteractionHandler.class));
         TelegramBotsApi botsApi = new TelegramBotsApi(DefaultBotSession.class);
         botsApi.registerBot(bot);
+        context.getRegistry().put(JrJournalBot.class, bot);
         initCommands(config, bot);
         ((ConversationGC) context.getBean(ConversationGC.class)).startGC();
         log.info("JR_JOURNAL bot started...");
