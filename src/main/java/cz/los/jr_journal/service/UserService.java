@@ -45,4 +45,9 @@ public class UserService {
         return repository.findByTelegramId(id);
     }
 
+    public Optional<BotUser> findByUsername(String username) {
+        log.info("Fetching user by username:{}...", username);
+        return repository.findByUsername(username);
+    }
+
 }

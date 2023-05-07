@@ -58,9 +58,7 @@ public class GroupRepository extends AbstractRepository implements Repository<Gr
         log.info("Attempting to find group by name {}...", name);
         try (SqlSession session = openSession()) {
             GroupMapper mapper = session.getMapper(groupMapperClass);
-            Optional<Group> group = mapper.findByName(name.toLowerCase());
-            group.ifPresent(value -> log.info("Group was successfully saved in the DB with id: {}", value.getGroupId()));
-            return group;
+            return mapper.findByName(name.toLowerCase());
         } catch (Exception e) {
             String message = String.format("Could not perform %s operation on %s!", "findByName", name);
             log.error(message + System.lineSeparator() + e.getMessage());

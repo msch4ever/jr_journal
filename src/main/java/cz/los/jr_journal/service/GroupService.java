@@ -1,5 +1,6 @@
 package cz.los.jr_journal.service;
 
+import cz.los.jr_journal.bot.conversation.AssignMentorConversation;
 import cz.los.jr_journal.bot.conversation.NewGroupConversation;
 import cz.los.jr_journal.dal.repository.GroupRepository;
 import cz.los.jr_journal.model.BotUser;
@@ -46,6 +47,11 @@ public class GroupService {
         return Optional.of(newGroup);
     }
 
+    public Optional<Group> findByName(String name) {
+        log.info("Trying to find group by name:{}", name);
+        return repository.findByName(name);
+    }
+
     public boolean groupExists(String name) {
         int existingCount = repository.countByName(name);
         return existingCount != 0;
@@ -64,5 +70,12 @@ public class GroupService {
         repository.update(group);
         log.info("Group with id:{} was assigned with level {}", group.getGroupId(), module.name());
         return Optional.of(module);
+    }
+
+    public void assignMentor(AssignMentorConversation conversation) {
+        BotUser mentor = conversation.getMentor();
+        Group group = conversation.getGroup();
+        repository.createGroupMentorAssociation(group.getGroupId(), mentor.getUserId());
+        log.info("Mentor:{} was assigned to group:{} successfully", mentor.getUsername(), group.getDisplayName());
     }
 }

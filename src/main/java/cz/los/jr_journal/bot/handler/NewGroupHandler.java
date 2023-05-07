@@ -1,21 +1,18 @@
 package cz.los.jr_journal.bot.handler;
 
 import cz.los.jr_journal.bot.BotResponse;
-import cz.los.jr_journal.bot.command.Command;
+import cz.los.jr_journal.bot.conversation.Conversation;
 import cz.los.jr_journal.bot.conversation.ConversationKeeper;
-import cz.los.jr_journal.bot.conversation.ConversationKey;
 import cz.los.jr_journal.bot.conversation.NewGroupConversation;
 import cz.los.jr_journal.model.BotUser;
 import cz.los.jr_journal.model.Group;
 import cz.los.jr_journal.model.Level;
 import cz.los.jr_journal.service.GroupService;
 import cz.los.jr_journal.service.UserService;
-import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.api.objects.User;
 
 import java.util.*;
 
@@ -45,10 +42,8 @@ public class NewGroupHandler extends AbstractCommandHandler implements CommandHa
             "+" - подтвердить
             "-" - отменить
             """;
-    private static final String OPERATION_ABORTED = "Операция отменена!";
     private static final String GROUP_CREATED = "Группа *%s* успешно зарегистрирована";
     private static final String GROUP_ALREADY_EXISTS = "Группа *%s* уже существует.. Проверь, может это ошибка?";
-    private static final String WRONG_CONVERSATION_STATE = "Произошла ошибка в комманде регистрации группы. Начнем заново?";
     private final GroupService groupService;
     private final UserService userService;
     private final ConversationKeeper keeper;
@@ -64,13 +59,13 @@ public class NewGroupHandler extends AbstractCommandHandler implements CommandHa
         log.info("Handling group creation command. {}", update);
         Message message = update.getMessage();
         if (message.isCommand()) {
-            return handleFirstStep(message);
+            return handleFirstStep(message, NEW_GROUP, ENTER_NAME, keeper);
         }
         Long chatId = message.getChatId();
         if (keeper.conversationExists(chatId)) {
             NewGroupConversation conversation = (NewGroupConversation) keeper.get(chatId);
             switch (conversation.getStep()) {
-                case 1: return readName(message, conversation);
+                case 1: return readGroupName(message, conversation);
                 case 2: return readLevel(message, conversation);
                 case 3: return readAssignSelf(message, conversation);
                 case 4: return confirmCreation(message, conversation);
@@ -84,28 +79,7 @@ public class NewGroupHandler extends AbstractCommandHandler implements CommandHa
                 .build());
     }
 
-    private BotResponse<SendMessage> handleFirstStep(Message message) {
-        log.info("Trying to handle first step...");
-        Optional<Command> command = extractCommand(message);
-        if (command.stream().anyMatch(it -> it == NEW_GROUP)) {
-            NewGroupConversation conversation = new NewGroupConversation(message.getChatId());
-            if (keeper.add(conversation)) {
-                conversation.incrementStep();
-                log.info("First step successful!");
-                return new BotResponse<>(SendMessage.builder()
-                        .chatId(message.getChatId())
-                        .text(ENTER_NAME)
-                        .build());
-            }
-        }
-        log.warn("Command is wrong or conversation exists...");
-        return new BotResponse<>(SendMessage.builder()
-                .chatId(message.getChatId())
-                .text(WRONG_CONVERSATION_STATE)
-                .build());
-    }
-
-    private BotResponse<SendMessage> readName(Message message, NewGroupConversation conversation) {
+    private BotResponse<SendMessage> readGroupName(Message message, NewGroupConversation conversation) {
         log.info("Reading group name for conversation key:{}", conversation.getChatId());
         String commandText = message.getText();
         GroupNameInput input = new GroupNameInput(commandText);
@@ -152,7 +126,7 @@ public class NewGroupHandler extends AbstractCommandHandler implements CommandHa
     }
 
     private BotResponse<SendMessage> readAssignSelf(Message message, NewGroupConversation conversation) {
-        log.info("Reading decision to assign creator to the goup for conversation chatId:{} command:{}",
+        log.info("Reading decision to assign creator to the group for conversation chatId:{} command:{}",
                 conversation.getChatId(), conversation.getCommand());
         String commandText = message.getText();
         ConfirmInput input = new ConfirmInput(commandText);
@@ -184,7 +158,8 @@ public class NewGroupHandler extends AbstractCommandHandler implements CommandHa
     }
 
     private BotResponse<SendMessage> confirmCreation(Message message, NewGroupConversation conversation) {
-        log.info("Reading group creation confirmation for conversation chatId:{} command:{}", conversation.getChatId(), conversation.getCommand());
+        log.info("Reading mentor assignment confirmation for conversation chatId:{} command:{}",
+                conversation.getChatId(), conversation.getCommand());
         String commandText = message.getText();
         ConfirmInput input = new ConfirmInput(commandText);
         input.validate();
@@ -218,6 +193,11 @@ public class NewGroupHandler extends AbstractCommandHandler implements CommandHa
                     .text(OPERATION_ABORTED)
                     .build());
         }
+    }
+
+    @Override
+    protected Conversation createConversation(long chatId) {
+        return new NewGroupConversation(chatId);
     }
 
     private static class GroupNameInput extends AbstractInput {
@@ -297,7 +277,12 @@ public class NewGroupHandler extends AbstractCommandHandler implements CommandHa
         private void checkIfLevelNotSingleDigit() {
             String level = splitText[0];
             boolean levelInputIsNotSingleDigit = inputIsNotSingleDigit(level);
-            boolean levelExists = Level.getByNumber(Integer.parseInt(level)).isPresent();
+            boolean levelExists = false;
+            try {
+                levelExists = Level.getByNumber(Integer.parseInt(level)).isPresent();
+            } catch (Exception e) {
+                log.warn("Provided level is not a number");
+            }
             if (levelInputIsNotSingleDigit || !levelExists) {
                 errorMessage = String.format(LEVEL_DOES_NOT_EXISTS, level) +
                         System.lineSeparator() +
@@ -325,68 +310,4 @@ public class NewGroupHandler extends AbstractCommandHandler implements CommandHa
         }
     }
 
-    private static class ConfirmInput extends AbstractInput {
-
-        private static final String NO_DECISION_PROVIDED = "Не предоставлено решение.";
-        private static final String TOO_MANY_ARGUMENTS = "Предоставлено слишком много параметров. " +
-                "Убедись, что решение предоставлено символом \"+\" или \"-\"";
-        private static final String LEVEL_DOES_NOT_EXISTS = """
-                Уровней у нас всего шесть.
-                1 - Java Syntax
-                2 - Java Core
-                3 - Java Professional
-                4 - Работа с БД
-                5 - Spring
-                6 - Итоговый проект
-                            
-                А от тебя мне пришло \"%s\"... не понятно :(
-                """;
-
-        private boolean decision;
-
-        public ConfirmInput(String commandText) {
-            super(commandText);
-        }
-
-        @Override
-        protected void validate() {
-            switch (splitText.length) {
-                case 0 -> initErrorIfLen0();
-                case 1 -> checkIfDecisionIsSingleDigit();
-                default -> intiErrorIfTooLong();
-            }
-        }
-
-        private void initErrorIfLen0() {
-            errorMessage = NO_DECISION_PROVIDED +
-                    System.lineSeparator() +
-                    NEW_LEVEL.getDescription();
-            valid = false;
-        }
-
-        private void checkIfDecisionIsSingleDigit() {
-            String decision = splitText[0];
-            boolean decisionIsSingleDigit = decision.length() == 1;
-            if (!decisionIsSingleDigit) {
-                errorMessage = TOO_MANY_ARGUMENTS +
-                        System.lineSeparator() +
-                        NEW_LEVEL.getDescription();
-                valid = false;
-            } else {
-                valid = "+".equals(decision) || "-".equals(decision);
-            }
-        }
-
-        private void intiErrorIfTooLong() {
-            errorMessage = TOO_MANY_ARGUMENTS +
-                    System.lineSeparator() +
-                    NEW_LEVEL.getDescription();
-            valid = false;
-        }
-
-        @Override
-        protected void extractThisParams() {
-            this.decision = "+".equals(splitText[0]);
-        }
-    }
 }

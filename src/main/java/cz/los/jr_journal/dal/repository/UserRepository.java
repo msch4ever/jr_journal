@@ -73,4 +73,16 @@ public class UserRepository extends AbstractRepository implements Repository<Bot
             throw new RuntimeException(message);
         }
     }
+
+    public Optional<BotUser> findByUsername(String username) {
+        try (SqlSession session = openSession()) {
+            UserMapper mapper = session.getMapper(mapperClass);
+            BotUser user = mapper.findByUsername(username);
+            return user != null ? Optional.of(user) :Optional.empty();
+        } catch (Exception e) {
+            String message = "Could not perform findByUsername!";
+            log.error(message + System.lineSeparator() + e.getMessage());
+            throw new RuntimeException(message);
+        }
+    }
 }
