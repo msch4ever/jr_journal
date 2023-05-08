@@ -3,10 +3,14 @@ package cz.los.jr_journal.dal.repository;
 import cz.los.jr_journal.dal.Repository;
 import cz.los.jr_journal.dal.mapper.GroupMapper;
 import cz.los.jr_journal.dal.mapper.GroupMentorMapper;
+import cz.los.jr_journal.dal.mapper.UserMapper;
+import cz.los.jr_journal.model.BotUser;
 import cz.los.jr_journal.model.Group;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.ibatis.session.SqlSession;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 @Slf4j
@@ -44,6 +48,25 @@ public class GroupRepository extends AbstractRepository implements Repository<Gr
             log.info("Group was successfully assigned to mentor");
         } catch (Exception e) {
             String message = String.format("Could not perform %s operationa", "createGroupMentorAssociation");
+            log.error(message + System.lineSeparator() + e.getMessage());
+            throw new RuntimeException(message);
+        }
+    }
+
+    public List<Group> fetchGroupsByUserId(long userId) {
+        try (SqlSession session = openSession()) {
+            GroupMentorMapper groupMentorMapper = session.getMapper(groupMentorMapperClass);
+            List<Long> groupIds = groupMentorMapper.getGroupIdsByUserId(userId);
+            if (groupIds.isEmpty()) {
+                log.info("No Groups associated with userId:{}", userId);
+                return Collections.emptyList();
+            }
+            GroupMapper groupMapper = session.getMapper(groupMapperClass);
+            List<Group> groups = groupMapper.getByIdInList(groupIds);
+            log.info("{} groups fetched for userId:{}", groups.size(), userId);
+            return groups;
+        } catch (Exception e) {
+            String message = "Could not perform fetchGroupsByUserId!";
             log.error(message + System.lineSeparator() + e.getMessage());
             throw new RuntimeException(message);
         }

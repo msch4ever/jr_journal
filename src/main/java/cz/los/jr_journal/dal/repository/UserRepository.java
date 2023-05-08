@@ -1,8 +1,10 @@
 package cz.los.jr_journal.dal.repository;
 
 import cz.los.jr_journal.dal.Repository;
+import cz.los.jr_journal.dal.mapper.GroupMentorMapper;
 import cz.los.jr_journal.dal.mapper.UserMapper;
 import cz.los.jr_journal.model.BotUser;
+import cz.los.jr_journal.model.Group;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.ibatis.io.Resources;
@@ -11,14 +13,17 @@ import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.ibatis.session.SqlSessionFactoryBuilder;
 
 import java.io.Reader;
+import java.util.List;
 import java.util.Optional;
 
 @Slf4j
 public class UserRepository extends AbstractRepository implements Repository<BotUser> {
 
     private final Class<UserMapper> mapperClass;
+    private final Class<GroupMentorMapper> groupMentorMapperClass;
     public UserRepository() {
         this.mapperClass = UserMapper.class;
+        this.groupMentorMapperClass = GroupMentorMapper.class;
     }
 
     @Override

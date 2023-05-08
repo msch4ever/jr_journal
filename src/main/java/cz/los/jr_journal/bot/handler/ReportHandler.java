@@ -5,6 +5,10 @@ import cz.los.jr_journal.bot.command.Command;
 import cz.los.jr_journal.bot.conversation.Conversation;
 import cz.los.jr_journal.bot.conversation.ConversationKeeper;
 import cz.los.jr_journal.bot.conversation.ReportConversation;
+import cz.los.jr_journal.model.BotUser;
+import cz.los.jr_journal.model.Group;
+import cz.los.jr_journal.service.GroupService;
+import cz.los.jr_journal.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
@@ -30,9 +34,13 @@ public class ReportHandler extends AbstractCommandHandler implements CommandHand
             Год
             """;
 
+    private final UserService userService;
+    private final GroupService groupService;
     private final ConversationKeeper keeper;
 
-    public ReportHandler(ConversationKeeper keeper) {
+    public ReportHandler(UserService userService, GroupService groupService, ConversationKeeper keeper) {
+        this.userService = userService;
+        this.groupService = groupService;
         this.keeper = keeper;
     }
 
@@ -73,7 +81,7 @@ public class ReportHandler extends AbstractCommandHandler implements CommandHand
         log.info("Trying to handle first step...");
         Optional<Command> command = extractCommand(message);
         if (command.stream().anyMatch(it -> it == expectedCommand)) {
-            Conversation conversation = createConversation(message.getChatId());
+            Conversation conversation = createConversation(message);
             if (keeper.add(conversation)) {
                 conversation.incrementStep();
                 log.info("First step successful!");
@@ -250,17 +258,53 @@ public class ReportHandler extends AbstractCommandHandler implements CommandHand
     }
 
     private BotResponse<SendMessage> pickGroup(Message message, ReportConversation conversation) {
-        LocalDate date = LocalDate.of(conversation.getYear().getValue(), conversation.getMonth(), conversation.getDay().getDayOfMonth());
-        keeper.remove(conversation.getChatId());
-        return new BotResponse(SendMessage.builder()
+        BotUser botUser = conversation.getBotUser();
+        userService.enrichWithGroups(botUser);
+        if (botUser.getGroups().isEmpty()) {
+            keeper.remove(message.getChatId());
+            return new BotResponse<>(SendMessage.builder()
+                    .chatId(message.getChatId())
+                    .text("У тебя нет групп, к которым ты привязан. Добавь группу при помощи команды /assign")
+                    .build());
+        }
+        List<InlineKeyboardButton> groups = new ArrayList<>();
+        for (Group group : botUser.getGroups()) {
+            InlineKeyboardButton groupButton = new InlineKeyboardButton();
+            String displayName = group.getDisplayName();
+            groupButton.setText(displayName);
+            groupButton.setCallbackData("GROUP_" + displayName);
+            groups.add(groupButton);
+        }
+
+        // Split the buttons into rows of 7 (one row for each week)
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+        for (int i = 0; i < groups.size(); i ++) {
+            List<InlineKeyboardButton> row = groups.subList(i, Math.min(i + 1, groups.size()));
+            rows.add(row);
+        }
+
+        InlineKeyboardMarkup keyboardMarkup = new InlineKeyboardMarkup(rows);
+
+        return new BotResponse<>(SendMessage.builder()
                 .chatId(conversation.getChatId())
-                .text(String.format("Ты выбрал такую дату: *%s*", date))
-                .parseMode(MARKDOWN)
+                .text("Выбери Группу")
+                .replyMarkup(keyboardMarkup)
                 .build());
     }
 
     private BotResponse<SendMessage> readGroup(Update update, ReportConversation conversation) {
-        return null;
+        return new BotResponse<>(SendMessage.builder()
+                .chatId(update.getMessage().getChatId())
+                .text("You picked " + conversation.toString())
+                .build());
+    }
+
+    private Conversation createConversation(Message message) {
+        Conversation conversation = createConversation(message.getChatId());
+        Optional<BotUser> userOptional = userService.findUserByTelegramId(message.getFrom().getId());
+        BotUser botUser = userOptional.orElseGet(() -> userService.createUser(message).get());
+        conversation.setBotUser(botUser);
+        return conversation;
     }
 
     @Override

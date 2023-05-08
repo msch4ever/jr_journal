@@ -2,12 +2,13 @@ package cz.los.jr_journal.model;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.ToString;
 
 import java.util.List;
 
 @Getter
-@ToString(exclude = "groupIds")
+@ToString(exclude = "groups")
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class BotUser {
 
@@ -19,7 +20,8 @@ public class BotUser {
     private String firstName;
     private String lastName;
     private UserType type;
-    private List<Long> groupIds;
+    @Setter
+    private List<Group> groups;
 
     public BotUser(Long telegramUserId, String username, String firstName, String lastName) {
         this.telegramUserId = telegramUserId;

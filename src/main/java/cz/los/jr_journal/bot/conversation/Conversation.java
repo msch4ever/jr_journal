@@ -1,6 +1,7 @@
 package cz.los.jr_journal.bot.conversation;
 
 import cz.los.jr_journal.bot.command.Command;
+import cz.los.jr_journal.model.BotUser;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -14,6 +15,8 @@ public abstract class Conversation {
     protected long lastInteracted;
     @Setter
     protected int step;
+    @Setter
+    protected BotUser botUser;
 
     public Conversation(long chatId, Command command, long timeout, int stepQty) {
         this.chatId = chatId;

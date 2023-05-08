@@ -2,6 +2,7 @@ package cz.los.jr_journal.bot.conversation;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 import java.time.Month;
 import java.time.MonthDay;
@@ -11,6 +12,7 @@ import static cz.los.jr_journal.bot.command.Command.REPORT;
 
 @Getter
 @Setter
+@ToString
 public class ReportConversation extends Conversation {
 
     private static final int REPORT_STEP_QTY = 8;

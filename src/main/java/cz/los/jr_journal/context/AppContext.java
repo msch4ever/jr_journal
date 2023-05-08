@@ -49,7 +49,7 @@ public final class AppContext {
                 registry.put(GroupRepository.class, groupRepository);
 
                 log.info("Initializing services...");
-                UserService userService = new UserService(userRepository);
+                UserService userService = new UserService(userRepository, groupRepository);
                 GroupService groupService = new GroupService(groupRepository);
 
                 registry.put(UserService.class, userService);
@@ -70,7 +70,7 @@ public final class AppContext {
                 NewGroupHandler newGroupHandler = new NewGroupHandler(groupService, userService, keeper);
                 NewLevelHandler newLevelHandler = new NewLevelHandler(groupService);
                 AssignMentorHandler assignMentorHandler = new AssignMentorHandler(groupService, userService, keeper);
-                ReportHandler reportHandler = new ReportHandler(keeper);
+                ReportHandler reportHandler = new ReportHandler(userService, groupService, keeper);
                 RootCommandHandler rootCommandHandler = new RootCommandHandler(handlers, errorHandler);
                 MessageHandler messageHandler = new MessageHandler(handlers, keeper);
                 InteractionHandler interactionHandler = new InteractionHandler(rootCommandHandler, messageHandler);
