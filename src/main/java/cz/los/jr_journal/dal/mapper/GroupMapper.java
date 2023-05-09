@@ -15,13 +15,16 @@ public interface GroupMapper {
     Optional<Group> findByName(@Param("name") String name);
 
     @Select("""
-            SELECT group_id, name, display_name, module FROM groups
-            WHERE group_id IN
-                    <foreach item='item' index='index' collection='groupIds' open='(' separator=',' close=')'>",
-                        #{groupIds.item},
-                    </foreach>
-            """)
-    List<Group> getByIdInList(List<Long> groupIds);
+            <script>
+                SELECT group_id, name, display_name, module FROM bot_group
+                WHERE group_id IN
+                <foreach item='groupId' index='index' collection='groupIds' open='(' separator=',' close=')'>
+                     #{groupId}
+                </foreach>
+            </script>
+            """
+    )
+    List<Group> getByIdInList(@Param("groupIds") List<Long> groupIds);
 
     @Select("SELECT COUNT(*) FROM bot_group WHERE name = #{name}")
     int countByName(@Param("name") String name);
@@ -34,13 +37,13 @@ public interface GroupMapper {
     void insertGroup(Group group);
 
     @Update("""
-               UPDATE bot_group
-               SET module = #{module}
-               WHERE group_id = #{groupId}
-               """)
+            UPDATE bot_group
+            SET module = #{module}
+            WHERE group_id = #{groupId}
+            """)
     void updateGroup(Group group);
 
     @Delete("DELETE FROM bot_group WHERE name = #{name}")
     void deleteGroup(@Param("name") String name);
-    
+
 }

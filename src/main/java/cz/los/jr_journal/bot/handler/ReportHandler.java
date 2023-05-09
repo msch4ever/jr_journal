@@ -5,9 +5,12 @@ import cz.los.jr_journal.bot.command.Command;
 import cz.los.jr_journal.bot.conversation.Conversation;
 import cz.los.jr_journal.bot.conversation.ConversationKeeper;
 import cz.los.jr_journal.bot.conversation.ReportConversation;
+import cz.los.jr_journal.model.Attendance;
 import cz.los.jr_journal.model.BotUser;
 import cz.los.jr_journal.model.Group;
+import cz.los.jr_journal.model.JournalEntry;
 import cz.los.jr_journal.service.GroupService;
+import cz.los.jr_journal.service.JournalEntryService;
 import cz.los.jr_journal.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -36,11 +39,13 @@ public class ReportHandler extends AbstractCommandHandler implements CommandHand
 
     private final UserService userService;
     private final GroupService groupService;
+    private final JournalEntryService entryService;
     private final ConversationKeeper keeper;
 
-    public ReportHandler(UserService userService, GroupService groupService, ConversationKeeper keeper) {
+    public ReportHandler(UserService userService, GroupService groupService, JournalEntryService entryService, ConversationKeeper keeper) {
         this.userService = userService;
         this.groupService = groupService;
+        this.entryService = entryService;
         this.keeper = keeper;
     }
 
@@ -58,14 +63,16 @@ public class ReportHandler extends AbstractCommandHandler implements CommandHand
         if (keeper.conversationExists(chatId)) {
             ReportConversation conversation = (ReportConversation) keeper.get(chatId);
             switch (conversation.getStep()) {
-                case 1:
-                    return readYear(update, conversation);
-                case 2:
-                    return readMonth(update, conversation);
-                case 3:
-                    return readDay(update, conversation);
-                case 4:
-                    return readGroup(update, conversation);
+                case 1 : return readYear(update, conversation);
+                case 2 : return readMonth(update, conversation);
+                case 3 : return readDay(update, conversation);
+                case 4 : return readGroup(update, conversation);
+                case 5 : return readTopic(update, conversation);
+                case 6 : return readWho(update, conversation);
+                case 7 : return readOtherMentor(update, conversation);
+                case 8 : return readWhatCouldBeImproved(update, conversation);
+                case 9 : return readComment(update, conversation);
+                case 10 : return readConfirmation(update, conversation);
             }
         }
         log.warn("Something went wrong with command. {}", NEW_GROUP);
@@ -276,9 +283,8 @@ public class ReportHandler extends AbstractCommandHandler implements CommandHand
             groups.add(groupButton);
         }
 
-        // Split the buttons into rows of 7 (one row for each week)
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
-        for (int i = 0; i < groups.size(); i ++) {
+        for (int i = 0; i < groups.size(); i++) {
             List<InlineKeyboardButton> row = groups.subList(i, Math.min(i + 1, groups.size()));
             rows.add(row);
         }
@@ -293,9 +299,248 @@ public class ReportHandler extends AbstractCommandHandler implements CommandHand
     }
 
     private BotResponse<SendMessage> readGroup(Update update, ReportConversation conversation) {
+        if (update.hasCallbackQuery() && update.getCallbackQuery().getData() != null) {
+            String data = update.getCallbackQuery().getData().trim();
+            if (data.startsWith("GROUP_")) {
+                String groupName = data.replace("GROUP_", "").toLowerCase();
+                Group group = groupService.findByName(groupName).orElseThrow(() -> {
+                    String errorMessage = "Could not fetch group:" + groupName;
+                    log.error(errorMessage);
+                    return new RuntimeException(errorMessage);
+                });
+                conversation.setGroup(group);
+                conversation.incrementStep();
+                return pickTopic(conversation);
+            }
+        }
         return new BotResponse<>(SendMessage.builder()
-                .chatId(update.getMessage().getChatId())
-                .text("You picked " + conversation.toString())
+                .chatId(conversation.getChatId())
+                .text("Не увидел группы. Попробуй еще")
+                .build());
+    }
+
+    private BotResponse<SendMessage> pickTopic(ReportConversation conversation) {
+        return new BotResponse<>(SendMessage.builder()
+                .chatId(conversation.getChatId())
+                .text("Тема занятия?")
+                .build());
+    }
+
+    private BotResponse<SendMessage> readTopic(Update update, ReportConversation conversation) {
+        if (update.hasMessage() && update.getMessage().getText() != null) {
+            String topic = update.getMessage().getText().trim();
+            conversation.setTopic(topic);
+            conversation.incrementStep();
+            return pickWho(conversation);
+        }
+        return new BotResponse<>(SendMessage.builder()
+                .chatId(conversation.getChatId())
+                .text("Не увидел темы занятия. Попробуй еще")
+                .build());
+    }
+
+    private BotResponse<SendMessage> pickWho(ReportConversation conversation) {
+        List<InlineKeyboardButton> decisions = new ArrayList<>();
+        InlineKeyboardButton yesButton = new InlineKeyboardButton();
+        String yes = "ДА";
+        yesButton.setText(yes);
+        yesButton.setCallbackData("DECISION_" + yes);
+        decisions.add(yesButton);
+
+        InlineKeyboardButton noButton = new InlineKeyboardButton();
+        String no = "НЕТ";
+        noButton.setText(no);
+        noButton.setCallbackData("DECISION_" + no);
+        decisions.add(noButton);
+
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+        rows.add(decisions);
+
+        InlineKeyboardMarkup keyboardMarkup = new InlineKeyboardMarkup(rows);
+
+        return new BotResponse<>(SendMessage.builder()
+                .chatId(conversation.getChatId())
+                .text("Ты проводил/ла занятие?")
+                .replyMarkup(keyboardMarkup)
+                .build());
+    }
+
+    private BotResponse<SendMessage> readWho(Update update, ReportConversation conversation) {
+        if (update.hasCallbackQuery() && update.getCallbackQuery().getData() != null) {
+            String data = update.getCallbackQuery().getData().trim();
+            if (data.startsWith("DECISION_")) {
+                String decision = data.replace("DECISION_", "");
+                boolean userConductedClass;
+                if (decision.equalsIgnoreCase("да")) {
+                    userConductedClass = true;
+                } else if (decision.equalsIgnoreCase("нет")) {
+                    userConductedClass = false;
+                } else {
+                    return new BotResponse<>(SendMessage.builder()
+                            .chatId(conversation.getChatId())
+                            .text("Не увидел кто проводил занятие. Попробуй еще")
+                            .build());
+                }
+                conversation.setUserConductedClass(userConductedClass);
+                conversation.incrementStep();
+                return pickOtherMentor(conversation);
+            }
+        }
+        return new BotResponse<>(SendMessage.builder()
+                .chatId(conversation.getChatId())
+                .text("Не увидел ты ли проводил/ла занятие. Попробуй еще")
+                .build());
+    }
+
+    private BotResponse<SendMessage> pickOtherMentor(ReportConversation conversation) {
+        List<InlineKeyboardButton> decisions = new ArrayList<>();
+        InlineKeyboardButton yesButton = new InlineKeyboardButton();
+        String yes = "ДА";
+        yesButton.setText(yes);
+        yesButton.setCallbackData("DECISION_" + yes);
+        decisions.add(yesButton);
+
+        InlineKeyboardButton noButton = new InlineKeyboardButton();
+        String no = "НЕТ";
+        noButton.setText(no);
+        noButton.setCallbackData("DECISION_" + no);
+        decisions.add(noButton);
+
+        InlineKeyboardButton partiallyButton = new InlineKeyboardButton();
+        String partially = "ЧАСТИЧНО";
+        partiallyButton.setText(partially);
+        partiallyButton.setCallbackData("DECISION_" + partially);
+        decisions.add(partiallyButton);
+
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+        rows.add(decisions);
+
+        InlineKeyboardMarkup keyboardMarkup = new InlineKeyboardMarkup(rows);
+
+        return new BotResponse<>(SendMessage.builder()
+                .chatId(conversation.getChatId())
+                .text("Присутствовал/ла ли на занятии другой/ая метнор/киня?")
+                .replyMarkup(keyboardMarkup)
+                .build());
+    }
+
+    private BotResponse<SendMessage> readOtherMentor(Update update, ReportConversation conversation) {
+        if (update.hasCallbackQuery() && update.getCallbackQuery().getData() != null) {
+            String data = update.getCallbackQuery().getData().trim();
+            if (data.startsWith("DECISION_")) {
+                String decision = data.replace("DECISION_", "");
+                Attendance otherMentorAttendance;
+                if (decision.equalsIgnoreCase("да")) {
+                    otherMentorAttendance = Attendance.YES;
+                } else if (decision.equalsIgnoreCase("нет")) {
+                    otherMentorAttendance = Attendance.NO;
+                } else if (decision.equalsIgnoreCase("частично")) {
+                    otherMentorAttendance = Attendance.PARTIALLY;
+                } else {
+                    return new BotResponse<>(SendMessage.builder()
+                            .chatId(conversation.getChatId())
+                            .text("Не увидел кто проводил занятие. Попробуй еще")
+                            .build());
+                }
+                conversation.setOtherMentorAttendance(otherMentorAttendance);
+                conversation.incrementStep();
+                return pickWhatCouldBeImproved(conversation);
+            }
+        }
+        return new BotResponse<>(SendMessage.builder()
+                .chatId(conversation.getChatId())
+                .text("Не увидел был ли на занятии другой/ая метор/киня. Попробуй еще")
+                .build());
+    }
+
+    private BotResponse<SendMessage> pickWhatCouldBeImproved(ReportConversation conversation) {
+        return new BotResponse<>(SendMessage.builder()
+                .chatId(conversation.getChatId())
+                .text("Может можно что-то улучшить?")
+                .build());
+    }
+
+    private BotResponse<SendMessage> readWhatCouldBeImproved(Update update, ReportConversation conversation) {
+        if (update.hasMessage() && update.getMessage().getText() != null) {
+            String comment = update.getMessage().getText().trim();
+            conversation.setWhatCouldBeImproved(comment);
+            conversation.incrementStep();
+        }
+        return pickComment(conversation);
+    }
+
+    private BotResponse<SendMessage> pickComment(ReportConversation conversation) {
+        return new BotResponse<>(SendMessage.builder()
+                .chatId(conversation.getChatId())
+                .text("Есть ли какие-то дополнительные комментарии?")
+                .build());
+    }
+
+    private BotResponse<SendMessage> readComment(Update update, ReportConversation conversation) {
+        if (update.hasMessage() && update.getMessage().getText() != null) {
+            String comment = update.getMessage().getText().trim();
+            conversation.setAdditionalComments(comment);
+            conversation.incrementStep();
+        }
+        return confirmReport(conversation);
+    }
+
+    private BotResponse<SendMessage> confirmReport(ReportConversation conversation) {
+        List<InlineKeyboardButton> decisions = new ArrayList<>();
+        InlineKeyboardButton yesButton = new InlineKeyboardButton();
+        String yes = "ДА";
+        yesButton.setText(yes);
+        yesButton.setCallbackData("DECISION_" + yes);
+        decisions.add(yesButton);
+
+        InlineKeyboardButton noButton = new InlineKeyboardButton();
+        String no = "НЕТ";
+        noButton.setText(no);
+        noButton.setCallbackData("DECISION_" + no);
+        decisions.add(noButton);
+
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+        rows.add(decisions);
+
+        InlineKeyboardMarkup keyboardMarkup = new InlineKeyboardMarkup(rows);
+
+        return new BotResponse<>(SendMessage.builder()
+                .chatId(conversation.getChatId())
+                .text(String.format("""
+                        Поддтверди создание отчета по занятию
+                        %s
+                        """, conversation.getSummary()
+                ))
+                .replyMarkup(keyboardMarkup)
+                .build());
+    }
+
+    private BotResponse<SendMessage> readConfirmation(Update update, ReportConversation conversation) {
+        if (update.hasCallbackQuery() && update.getCallbackQuery().getData() != null) {
+            String data = update.getCallbackQuery().getData().trim();
+            if (data.startsWith("DECISION_")) {
+                String decision = data.replace("DECISION_", "");
+                if (decision.equalsIgnoreCase("да")) {
+                    keeper.remove(conversation.getChatId());
+                    Optional<JournalEntry> entryOptional = entryService.createEntry(conversation);
+                    if (entryOptional.isPresent()) {
+                        log.info("Journal entry crated successfully! Entry id: {}", entryOptional.get().getEntryId());
+                    } else {
+                        throw new RuntimeException("Could not create journal entry!");
+                    }
+                } else if (decision.equalsIgnoreCase("нет")) {
+                    log.info("Aborting journal entry creation due to user's decision...");
+                    keeper.remove(conversation.getChatId());
+                    return new BotResponse<>(SendMessage.builder()
+                            .chatId(conversation.getChatId())
+                            .text(OPERATION_ABORTED)
+                            .build());
+                }
+            }
+        }
+        return new BotResponse<>(SendMessage.builder()
+                .chatId(conversation.getChatId())
+                .text("Не твоего решения. Попробуй еще")
                 .build());
     }
 

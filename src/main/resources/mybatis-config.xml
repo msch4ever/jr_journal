@@ -19,6 +19,7 @@
         <mapper class="cz.los.jr_journal.dal.mapper.UserMapper"/>
         <mapper class="cz.los.jr_journal.dal.mapper.GroupMapper"/>
         <mapper class="cz.los.jr_journal.dal.mapper.GroupMentorMapper"/>
+        <mapper class="cz.los.jr_journal.dal.mapper.JournalEntryMapper"/>
     </mappers>
 
 </configuration>

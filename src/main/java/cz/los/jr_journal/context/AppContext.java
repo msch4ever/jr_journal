@@ -5,8 +5,10 @@ import cz.los.jr_journal.bot.conversation.ConversationGC;
 import cz.los.jr_journal.bot.conversation.ConversationKeeper;
 import cz.los.jr_journal.bot.handler.*;
 import cz.los.jr_journal.dal.repository.GroupRepository;
+import cz.los.jr_journal.dal.repository.JournalEntryRepository;
 import cz.los.jr_journal.dal.repository.UserRepository;
 import cz.los.jr_journal.service.GroupService;
+import cz.los.jr_journal.service.JournalEntryService;
 import cz.los.jr_journal.service.UserService;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -44,16 +46,20 @@ public final class AppContext {
                 log.info("Initializing repositories...");
                 UserRepository userRepository = new UserRepository();
                 GroupRepository groupRepository = new GroupRepository();
+                JournalEntryRepository journalEntryRepository = new JournalEntryRepository();
 
                 registry.put(UserRepository.class, userRepository);
                 registry.put(GroupRepository.class, groupRepository);
+                registry.put(JournalEntryRepository.class, journalEntryRepository);
 
                 log.info("Initializing services...");
                 UserService userService = new UserService(userRepository, groupRepository);
                 GroupService groupService = new GroupService(groupRepository);
+                JournalEntryService entryService = new JournalEntryService(journalEntryRepository);
 
                 registry.put(UserService.class, userService);
                 registry.put(GroupService.class, groupService);
+                registry.put(JournalEntryService.class, entryService);
 
                 log.info("Initiating conversation Keeper...");
                 ConversationKeeper keeper = new ConversationKeeper();
@@ -70,7 +76,7 @@ public final class AppContext {
                 NewGroupHandler newGroupHandler = new NewGroupHandler(groupService, userService, keeper);
                 NewLevelHandler newLevelHandler = new NewLevelHandler(groupService);
                 AssignMentorHandler assignMentorHandler = new AssignMentorHandler(groupService, userService, keeper);
-                ReportHandler reportHandler = new ReportHandler(userService, groupService, keeper);
+                ReportHandler reportHandler = new ReportHandler(userService, groupService, entryService, keeper);
                 RootCommandHandler rootCommandHandler = new RootCommandHandler(handlers, errorHandler);
                 MessageHandler messageHandler = new MessageHandler(handlers, keeper);
                 InteractionHandler interactionHandler = new InteractionHandler(rootCommandHandler, messageHandler);

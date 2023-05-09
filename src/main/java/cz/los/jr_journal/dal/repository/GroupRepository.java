@@ -3,8 +3,6 @@ package cz.los.jr_journal.dal.repository;
 import cz.los.jr_journal.dal.Repository;
 import cz.los.jr_journal.dal.mapper.GroupMapper;
 import cz.los.jr_journal.dal.mapper.GroupMentorMapper;
-import cz.los.jr_journal.dal.mapper.UserMapper;
-import cz.los.jr_journal.model.BotUser;
 import cz.los.jr_journal.model.Group;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.ibatis.session.SqlSession;
