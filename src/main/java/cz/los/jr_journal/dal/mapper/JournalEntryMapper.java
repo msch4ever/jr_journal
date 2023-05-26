@@ -28,7 +28,7 @@ public interface JournalEntryMapper {
                 #{generalComment}
             );
             """)
-    @Options(useGeneratedKeys = true, keyProperty = "entryUserId")
+    @Options(useGeneratedKeys = true, keyProperty = "entryId")
     void insertJournalEntry(JournalEntry journalEntry);
 
     //ToDo: no Id returned from insert

@@ -2,12 +2,14 @@ package cz.los.jr_journal.model;
 
 import cz.los.jr_journal.bot.conversation.ReportConversation;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDate;
 
 @Getter
 public class JournalEntry {
 
+    @Setter
     private Long entryId;
     private Long entryUserId;
     private Long lectorUserId;

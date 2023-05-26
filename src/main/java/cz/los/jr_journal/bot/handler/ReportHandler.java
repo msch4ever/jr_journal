@@ -63,16 +63,30 @@ public class ReportHandler extends AbstractCommandHandler implements CommandHand
         if (keeper.conversationExists(chatId)) {
             ReportConversation conversation = (ReportConversation) keeper.get(chatId);
             switch (conversation.getStep()) {
-                case 1 : return readYear(update, conversation);
-                case 2 : return readMonth(update, conversation);
-                case 3 : return readDay(update, conversation);
-                case 4 : return readGroup(update, conversation);
-                case 5 : return readTopic(update, conversation);
-                case 6 : return readWho(update, conversation);
-                case 7 : return readOtherMentor(update, conversation);
-                case 8 : return readWhatCouldBeImproved(update, conversation);
-                case 9 : return readComment(update, conversation);
-                case 10 : return readConfirmation(update, conversation);
+                case 1:
+                    return readYear(update, conversation);
+                case 2:
+                    return readMonth(update, conversation);
+                case 3:
+                    return readDay(update, conversation);
+                case 4:
+                    return readGroup(update, conversation);
+                case 5:
+                    return readTopic(update, conversation);
+                case 6:
+                    return readWho(update, conversation);
+                case 7:
+                    return readOtherMentor(update, conversation);
+                case 8:
+                    return readWhatCouldBeImprovedDecision(update, conversation);
+                case 9:
+                    return readWhatCouldBeImprovedComment(update, conversation);
+                case 10:
+                    return readCommentDecision(update, conversation);
+                case 11:
+                    return readComment(update, conversation);
+                case 12:
+                    return readConfirmation(update, conversation);
             }
         }
         log.warn("Something went wrong with command. {}", NEW_GROUP);
@@ -454,13 +468,67 @@ public class ReportHandler extends AbstractCommandHandler implements CommandHand
     }
 
     private BotResponse<SendMessage> pickWhatCouldBeImproved(ReportConversation conversation) {
+        List<InlineKeyboardButton> decisions = new ArrayList<>();
+        InlineKeyboardButton yesButton = new InlineKeyboardButton();
+        String yes = "ДА";
+        yesButton.setText(yes);
+        yesButton.setCallbackData("DECISION_" + yes);
+        decisions.add(yesButton);
+
+        InlineKeyboardButton noButton = new InlineKeyboardButton();
+        String no = "НЕТ";
+        noButton.setText(no);
+        noButton.setCallbackData("DECISION_" + no);
+        decisions.add(noButton);
+
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+        rows.add(decisions);
+
+        InlineKeyboardMarkup keyboardMarkup = new InlineKeyboardMarkup(rows);
+
         return new BotResponse<>(SendMessage.builder()
                 .chatId(conversation.getChatId())
                 .text("Может можно что-то улучшить?")
+                .replyMarkup(keyboardMarkup)
                 .build());
     }
 
-    private BotResponse<SendMessage> readWhatCouldBeImproved(Update update, ReportConversation conversation) {
+    private BotResponse<SendMessage> readWhatCouldBeImprovedDecision(Update update, ReportConversation conversation) {
+        if (update.hasCallbackQuery() && update.getCallbackQuery().getData() != null) {
+            String data = update.getCallbackQuery().getData().trim();
+            if (data.startsWith("DECISION_")) {
+                String decision = data.replace("DECISION_", "");
+                boolean couldBeImproved = false;
+                if (decision.equalsIgnoreCase("да")) {
+                    couldBeImproved = true;
+                } else if (decision.equalsIgnoreCase("нет")) {
+                    couldBeImproved = false;
+                } else {
+                    return new BotResponse<>(SendMessage.builder()
+                            .chatId(conversation.getChatId())
+                            .text("Не увидел можно ли что-то улучшить или нет. Попробуй еще")
+                            .build());
+                }
+                if (couldBeImproved) {
+                    conversation.incrementStep();
+                    return new BotResponse<>(SendMessage.builder()
+                            .chatId(conversation.getChatId())
+                            .text("Напиши что можно что-то улучшить?")
+                            .build());
+                } else {
+                    conversation.incrementStep();
+                    conversation.incrementStep();
+                    return pickComment(conversation);
+                }
+            }
+        }
+        return new BotResponse<>(SendMessage.builder()
+                .chatId(conversation.getChatId())
+                .text("Не увидел можно ли что-то улучшить или нет. Попробуй еще")
+                .build());
+    }
+
+    private BotResponse<SendMessage> readWhatCouldBeImprovedComment(Update update, ReportConversation conversation) {
         if (update.hasMessage() && update.getMessage().getText() != null) {
             String comment = update.getMessage().getText().trim();
             conversation.setWhatCouldBeImproved(comment);
@@ -470,9 +538,63 @@ public class ReportHandler extends AbstractCommandHandler implements CommandHand
     }
 
     private BotResponse<SendMessage> pickComment(ReportConversation conversation) {
+        List<InlineKeyboardButton> decisions = new ArrayList<>();
+        InlineKeyboardButton yesButton = new InlineKeyboardButton();
+        String yes = "ДА";
+        yesButton.setText(yes);
+        yesButton.setCallbackData("DECISION_" + yes);
+        decisions.add(yesButton);
+
+        InlineKeyboardButton noButton = new InlineKeyboardButton();
+        String no = "НЕТ";
+        noButton.setText(no);
+        noButton.setCallbackData("DECISION_" + no);
+        decisions.add(noButton);
+
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+        rows.add(decisions);
+
+        InlineKeyboardMarkup keyboardMarkup = new InlineKeyboardMarkup(rows);
+
         return new BotResponse<>(SendMessage.builder()
                 .chatId(conversation.getChatId())
                 .text("Есть ли какие-то дополнительные комментарии?")
+                .replyMarkup(keyboardMarkup)
+                .build());
+    }
+
+    private BotResponse<SendMessage> readCommentDecision(Update update, ReportConversation conversation) {
+        if (update.hasCallbackQuery() && update.getCallbackQuery().getData() != null) {
+            String data = update.getCallbackQuery().getData().trim();
+            if (data.startsWith("DECISION_")) {
+                String decision = data.replace("DECISION_", "");
+                boolean otherComment = false;
+                if (decision.equalsIgnoreCase("да")) {
+                    otherComment = true;
+                } else if (decision.equalsIgnoreCase("нет")) {
+                    otherComment = false;
+                } else {
+                    return new BotResponse<>(SendMessage.builder()
+                            .chatId(conversation.getChatId())
+                            .text("Не увидел есть ли у тебя дополнительный комментарий или нет. Попробуй еще")
+                            .build());
+                }
+                if (otherComment) {
+                    conversation.incrementStep();
+                    return new BotResponse<>(SendMessage.builder()
+                            .chatId(conversation.getChatId())
+                            .text("Напиши дополнительный комментарий к занятию и школе в целом.")
+                            .build());
+                } else {
+                    conversation.incrementStep();
+                    conversation.incrementStep();
+                    return confirmReport(conversation);
+                }
+            }
+        }
+        return new BotResponse<>(SendMessage.builder()
+                .chatId(conversation.getChatId())
+                .text("Не увидел есть ли у тебя дополнительный комментарий или нет. Попробуй еще")
                 .build());
     }
 
@@ -525,6 +647,10 @@ public class ReportHandler extends AbstractCommandHandler implements CommandHand
                     Optional<JournalEntry> entryOptional = entryService.createEntry(conversation);
                     if (entryOptional.isPresent()) {
                         log.info("Journal entry crated successfully! Entry id: {}", entryOptional.get().getEntryId());
+                        return new BotResponse<>(SendMessage.builder()
+                                .chatId(conversation.getChatId())
+                                .text("Занятие сохранено!")
+                                .build());
                     } else {
                         throw new RuntimeException("Could not create journal entry!");
                     }

@@ -19,7 +19,7 @@ import static cz.los.jr_journal.bot.command.Command.REPORT;
 @ToString
 public class ReportConversation extends Conversation {
 
-    private static final int REPORT_STEP_QTY = 10;
+    private static final int REPORT_STEP_QTY = 12;
     private static final int REPORT_STEP_TIMEOUT = 20;
 
     public ReportConversation(long chatId) {
@@ -51,8 +51,8 @@ public class ReportConversation extends Conversation {
                 group.getDisplayName(),
                 userConductedClass ? "Занятие было проведено тобой" : "Другой/ая ментор/киня проводил/ла занятие",
                 otherMentorAttendance,
-                whatCouldBeImproved,
-                additionalComments);
+                whatCouldBeImproved != null ? whatCouldBeImproved : "нет комментария",
+                additionalComments != null ? additionalComments : "нет комментария");
     }
 
 }
