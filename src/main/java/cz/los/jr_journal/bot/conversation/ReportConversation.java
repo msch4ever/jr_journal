@@ -26,6 +26,7 @@ public class ReportConversation extends Conversation {
         super(chatId, REPORT, REPORT_STEP_TIMEOUT, REPORT_STEP_QTY);
     }
 
+    private ReportConversationStep reportStep;
     private Year year;
     private Month month;
     private MonthDay day;
@@ -40,19 +41,30 @@ public class ReportConversation extends Conversation {
 
     public String getSummary() {
         return String.format("""
-                Занятие прошло %s
-                В Группе %s
-                %s
-                Дургой/ая метор/киня присутствовал/ла на занятии: %s
-                Можно ли что-то улучшить? - %s
-                Дополнительные комментарии - %s
-                """,
+                        Занятие прошло %s
+                        В Группе %s
+                        %s
+                        Дургой/ая метор/киня присутствовал/ла на занятии: %s
+                        Можно ли что-то улучшить? - %s
+                        Дополнительные комментарии - %s
+                        """,
                 LocalDate.of(year.getValue(), month, day.getDayOfMonth()),
                 group.getDisplayName(),
                 userConductedClass ? "Занятие было проведено тобой" : "Другой/ая ментор/киня проводил/ла занятие",
                 otherMentorAttendance,
                 whatCouldBeImproved != null ? whatCouldBeImproved : "нет комментария",
                 additionalComments != null ? additionalComments : "нет комментария");
+    }
+
+    public void setReportStep(ReportConversationStep reportStep) {
+        this.lastInteracted = System.currentTimeMillis();
+        this.reportStep = reportStep;
+    }
+
+    public enum ReportConversationStep {
+        YEAR, MONTH, DAY, GROUP, TOPIC, WHO, OTHER_MENTOR,
+        WHAT_COULD_BE_IMPROVED_DECISION, WHAT_COULD_BE_IMPROVED_COMMENT,
+        COMMENT_DECISION, COMMENT, CONFIRMATION
     }
 
 }

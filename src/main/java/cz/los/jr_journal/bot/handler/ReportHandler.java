@@ -2,7 +2,6 @@ package cz.los.jr_journal.bot.handler;
 
 import cz.los.jr_journal.bot.BotResponse;
 import cz.los.jr_journal.bot.command.Command;
-import cz.los.jr_journal.bot.conversation.Conversation;
 import cz.los.jr_journal.bot.conversation.ConversationKeeper;
 import cz.los.jr_journal.bot.conversation.ReportConversation;
 import cz.los.jr_journal.model.Attendance;
@@ -28,6 +27,8 @@ import java.util.Optional;
 
 import static cz.los.jr_journal.bot.command.Command.NEW_GROUP;
 import static cz.los.jr_journal.bot.command.Command.REPORT;
+import static cz.los.jr_journal.bot.conversation.ReportConversation.ReportConversationStep.*;
+
 
 @Slf4j
 public class ReportHandler extends AbstractCommandHandler implements CommandHandler<SendMessage> {
@@ -62,32 +63,21 @@ public class ReportHandler extends AbstractCommandHandler implements CommandHand
         long chatId = message.getChatId();
         if (keeper.conversationExists(chatId)) {
             ReportConversation conversation = (ReportConversation) keeper.get(chatId);
-            switch (conversation.getStep()) {
-                case 1:
-                    return readYear(update, conversation);
-                case 2:
-                    return readMonth(update, conversation);
-                case 3:
-                    return readDay(update, conversation);
-                case 4:
-                    return readGroup(update, conversation);
-                case 5:
-                    return readTopic(update, conversation);
-                case 6:
-                    return readWho(update, conversation);
-                case 7:
-                    return readOtherMentor(update, conversation);
-                case 8:
-                    return readWhatCouldBeImprovedDecision(update, conversation);
-                case 9:
-                    return readWhatCouldBeImprovedComment(update, conversation);
-                case 10:
-                    return readCommentDecision(update, conversation);
-                case 11:
-                    return readComment(update, conversation);
-                case 12:
-                    return readConfirmation(update, conversation);
-            }
+            ReportConversation.ReportConversationStep step = conversation.getReportStep();
+            return switch (step) {
+                case YEAR -> readYear(update, conversation);
+                case MONTH -> readMonth(update, conversation);
+                case DAY -> readDay(update, conversation);
+                case GROUP -> readGroup(update, conversation);
+                case TOPIC -> readTopic(update, conversation);
+                case WHO -> readWho(update, conversation);
+                case OTHER_MENTOR -> readOtherMentor(update, conversation);
+                case WHAT_COULD_BE_IMPROVED_DECISION -> readWhatCouldBeImprovedDecision(update, conversation);
+                case WHAT_COULD_BE_IMPROVED_COMMENT -> readWhatCouldBeImprovedComment(update, conversation);
+                case COMMENT_DECISION -> readCommentDecision(update, conversation);
+                case COMMENT -> readComment(update, conversation);
+                case CONFIRMATION -> readConfirmation(update, conversation);
+            };
         }
         log.warn("Something went wrong with command. {}", NEW_GROUP);
         keeper.remove(chatId);
@@ -102,9 +92,9 @@ public class ReportHandler extends AbstractCommandHandler implements CommandHand
         log.info("Trying to handle first step...");
         Optional<Command> command = extractCommand(message);
         if (command.stream().anyMatch(it -> it == expectedCommand)) {
-            Conversation conversation = createConversation(message);
+            ReportConversation conversation = createConversation(message);
             if (keeper.add(conversation)) {
-                conversation.incrementStep();
+                conversation.setReportStep(YEAR);
                 log.info("First step successful!");
                 return pickYear(message);
             }
@@ -147,7 +137,7 @@ public class ReportHandler extends AbstractCommandHandler implements CommandHand
                 String yearString = data.replace("YEAR_", "");
                 Year year = Year.of(Integer.parseInt(yearString));
                 conversation.setYear(year);
-                conversation.incrementStep();
+                conversation.setReportStep(MONTH);
                 return pickMonth(conversation);
             }
         }
@@ -189,7 +179,7 @@ public class ReportHandler extends AbstractCommandHandler implements CommandHand
                 String monthString = data.replace("MONTH_", "");
                 Month month = Month.valueOf(monthString);
                 conversation.setMonth(month);
-                conversation.incrementStep();
+                conversation.setReportStep(DAY);
                 return pickDay(conversation);
             }
         }
@@ -268,7 +258,7 @@ public class ReportHandler extends AbstractCommandHandler implements CommandHand
                 String dayString = data.replace("DAY_", "");
                 MonthDay day = MonthDay.of(conversation.getMonth(), Integer.parseInt(dayString));
                 conversation.setDay(day);
-                conversation.incrementStep();
+                conversation.setReportStep(GROUP);
                 return pickGroup(update.getMessage(), conversation);
             }
         }
@@ -323,7 +313,7 @@ public class ReportHandler extends AbstractCommandHandler implements CommandHand
                     return new RuntimeException(errorMessage);
                 });
                 conversation.setGroup(group);
-                conversation.incrementStep();
+                conversation.setReportStep(TOPIC);
                 return pickTopic(conversation);
             }
         }
@@ -344,7 +334,7 @@ public class ReportHandler extends AbstractCommandHandler implements CommandHand
         if (update.hasMessage() && update.getMessage().getText() != null) {
             String topic = update.getMessage().getText().trim();
             conversation.setTopic(topic);
-            conversation.incrementStep();
+            conversation.setReportStep(WHO);
             return pickWho(conversation);
         }
         return new BotResponse<>(SendMessage.builder()
@@ -396,7 +386,7 @@ public class ReportHandler extends AbstractCommandHandler implements CommandHand
                             .build());
                 }
                 conversation.setUserConductedClass(userConductedClass);
-                conversation.incrementStep();
+                conversation.setReportStep(OTHER_MENTOR);
                 return pickOtherMentor(conversation);
             }
         }
@@ -457,7 +447,7 @@ public class ReportHandler extends AbstractCommandHandler implements CommandHand
                             .build());
                 }
                 conversation.setOtherMentorAttendance(otherMentorAttendance);
-                conversation.incrementStep();
+                conversation.setReportStep(WHAT_COULD_BE_IMPROVED_DECISION);
                 return pickWhatCouldBeImproved(conversation);
             }
         }
@@ -510,14 +500,13 @@ public class ReportHandler extends AbstractCommandHandler implements CommandHand
                             .build());
                 }
                 if (couldBeImproved) {
-                    conversation.incrementStep();
+                    conversation.setReportStep(WHAT_COULD_BE_IMPROVED_COMMENT);
                     return new BotResponse<>(SendMessage.builder()
                             .chatId(conversation.getChatId())
                             .text("Напиши что можно что-то улучшить?")
                             .build());
                 } else {
-                    conversation.incrementStep();
-                    conversation.incrementStep();
+                    conversation.setReportStep(COMMENT_DECISION);
                     return pickComment(conversation);
                 }
             }
@@ -532,7 +521,7 @@ public class ReportHandler extends AbstractCommandHandler implements CommandHand
         if (update.hasMessage() && update.getMessage().getText() != null) {
             String comment = update.getMessage().getText().trim();
             conversation.setWhatCouldBeImproved(comment);
-            conversation.incrementStep();
+            conversation.setReportStep(COMMENT_DECISION);
         }
         return pickComment(conversation);
     }
@@ -580,14 +569,13 @@ public class ReportHandler extends AbstractCommandHandler implements CommandHand
                             .build());
                 }
                 if (otherComment) {
-                    conversation.incrementStep();
+                    conversation.setReportStep(COMMENT);
                     return new BotResponse<>(SendMessage.builder()
                             .chatId(conversation.getChatId())
                             .text("Напиши дополнительный комментарий к занятию и школе в целом.")
                             .build());
                 } else {
-                    conversation.incrementStep();
-                    conversation.incrementStep();
+                    conversation.setReportStep(CONFIRMATION);
                     return confirmReport(conversation);
                 }
             }
@@ -602,7 +590,7 @@ public class ReportHandler extends AbstractCommandHandler implements CommandHand
         if (update.hasMessage() && update.getMessage().getText() != null) {
             String comment = update.getMessage().getText().trim();
             conversation.setAdditionalComments(comment);
-            conversation.incrementStep();
+            conversation.setReportStep(CONFIRMATION);
         }
         return confirmReport(conversation);
     }
@@ -670,8 +658,8 @@ public class ReportHandler extends AbstractCommandHandler implements CommandHand
                 .build());
     }
 
-    private Conversation createConversation(Message message) {
-        Conversation conversation = createConversation(message.getChatId());
+    private ReportConversation createConversation(Message message) {
+        ReportConversation conversation = createConversation(message.getChatId());
         Optional<BotUser> userOptional = userService.findUserByTelegramId(message.getFrom().getId());
         BotUser botUser = userOptional.orElseGet(() -> userService.createUser(message).get());
         conversation.setBotUser(botUser);
@@ -679,7 +667,7 @@ public class ReportHandler extends AbstractCommandHandler implements CommandHand
     }
 
     @Override
-    protected Conversation createConversation(long chatId) {
+    protected ReportConversation createConversation(long chatId) {
         return new ReportConversation(chatId);
     }
 }
