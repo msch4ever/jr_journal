@@ -111,8 +111,9 @@ public class ReportHandler extends AbstractCommandHandler implements CommandHand
         int current = Year.now().getValue();
         for (int decrement = 0; decrement < 3; decrement++) {
             InlineKeyboardButton year = new InlineKeyboardButton();
-            year.setText(String.valueOf(current - decrement));
-            year.setCallbackData("YEAR_" + current);
+            int currentYear = current - decrement;
+            year.setText(String.valueOf(currentYear));
+            year.setCallbackData("YEAR_" + currentYear);
             years.add(year);
         }
 
@@ -214,7 +215,16 @@ public class ReportHandler extends AbstractCommandHandler implements CommandHand
         // Create a list of buttons representing days of the month
         List<InlineKeyboardButton> days = new ArrayList<>();
         int currentDay = 1;
-        for (int i = 1; i <= 35; i++) {
+        int delta = startOfMonthDayOfWeek - 1;
+        int overallPositions = 0;
+
+        if ((daysInMonth + delta) % 7 == 0) {
+            overallPositions = daysInMonth;
+        } else {
+            int weekMultiplier = ((daysInMonth + delta) / 7) + 1;
+            overallPositions = 7 * weekMultiplier;
+        }
+        for (int i = 1; i <= overallPositions; i++) {
             InlineKeyboardButton button = new InlineKeyboardButton();
             if (i >= startOfMonthDayOfWeek && currentDay <= daysInMonth) {
                 button.setText(String.valueOf(currentDay));
